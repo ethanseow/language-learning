@@ -1,5 +1,10 @@
-const routes = {
-    'joinRoom'
+const socketRoutes = {
+    joinRoom:'joinRoom',
+    sendTestData:'sendTestData'
 }
 
-export default routes
+export type testData = {
+    message:string,
+}
+
+export { socketRoutes }
