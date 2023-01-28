@@ -1,10 +1,7 @@
 <template>
-	<div>
-		hello world
-		<br />
-		<NuxtLink to="/products/bathroom/"> To bathroom pages</NuxtLink>
-		<br />
-		<NuxtLink to="/products/furniture/"> To furniture pages</NuxtLink>
+	<div class="w-screen h-screen default-bg flex flex-col">
+		<Header />
+		<Hero />
 	</div>
 </template>
 <script setup lang="ts"></script>

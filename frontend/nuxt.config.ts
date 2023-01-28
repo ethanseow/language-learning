@@ -1,11 +1,19 @@
 // nuxt.config.js
 export default defineNuxtConfig({
 	// ... other options
+	css: ["~/assets/css/main.css"],
+	postcss: {
+		plugins: {
+			tailwindcss: {},
+			autoprefixer: {},
+		},
+	},
 	imports: {
-		dirs: ["stores"],
+		dirs: ["stores", "assets/logos", "constants"],
 	},
 	modules: [
 		// ...
+		"@nuxtjs/tailwindcss",
 		[
 			"@pinia/nuxt",
 			{
@@ -17,5 +25,15 @@ export default defineNuxtConfig({
 				],
 			},
 		],
+	],
+	components: [
+		{
+			path: "~/components/portions",
+			pathPrefix: true,
+		},
+		{
+			path: "~/components/",
+			pathPrefix: false,
+		},
 	],
 });
