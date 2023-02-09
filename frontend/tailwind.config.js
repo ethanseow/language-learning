@@ -8,11 +8,15 @@ module.exports = {
 		"./app.vue",
 	],
 	theme: {
+		fontFamily: {
+			inter: ["Inter", "sans-serif"],
+		},
 		extend: {
 			colors: {
-				primary: "#000000",
-				secondary: "#3498eb",
-				background: "#cfdbe6",
+				primary: "#FFFFFF",
+				secondary: "#899BFB",
+				background: "#242424",
+				backgroundSecondary: "#525252",
 			},
 		},
 	},

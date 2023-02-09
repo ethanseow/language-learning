@@ -1,23 +1,23 @@
 <template>
-	<div class="flex flex-row w-full items-center px-24 py-10 gap-10">
-		<LogoText />
-		<div class="flex flex-row grow gap-10 justify-evenly">
-			<NuxtLink :to="urlConsts.WAITROOM" class="font-semibold text-2xl"
-				>Lobby</NuxtLink
-			>
-			<NuxtLink :to="urlConsts.FEATURES" class="font-semibold text-2xl"
-				>Features</NuxtLink
-			>
-			<NuxtLink :to="urlConsts.ABOUT" class="font-semibold text-2xl"
-				>How It Works</NuxtLink
-			>
+	<div class="flex flex-row w-full align-middle py-6">
+		<LogoText class="grow" />
+		<div class="flex flex-row grow justify-between items-center">
+			<NuxtLink :to="urlConsts.WAITROOM">Practice</NuxtLink>
+			<NuxtLink :to="urlConsts.FEATURES">How It Works</NuxtLink>
+			<NuxtLink :to="urlConsts.ACCOUNT">
+				<div>
+					{{ account.firstName }}
+				</div>
+			</NuxtLink>
 		</div>
-		<JoinNow />
-		<Hamburger class="w-[40px] h-[40px]" />
-	</div>
-	<div class="flex flex-row justify-center">
-		<div class="w-[95%] h-[1.5px] bg-black"></div>
 	</div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { storeToRefs } from "pinia";
+import { useAccountStore } from "~~/stores/account";
+
+const accountStore = useAccountStore();
+
+const { account } = storeToRefs(accountStore);
+</script>

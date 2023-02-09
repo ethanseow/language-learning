@@ -1,9 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Road+Rage&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+	html {
+		@apply text-primary font-inter;
+	}
 	.default-bg {
 		@apply bg-background;
+	}
+	.text-stroke {
+		-webkit-text-stroke-width: 0.75px;
+		-webkit-text-stroke-color: black;
 	}
 }

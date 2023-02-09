@@ -28,10 +28,6 @@ export default defineNuxtConfig({
 	],
 	components: [
 		{
-			path: "~/components/portions",
-			pathPrefix: true,
-		},
-		{
 			path: "~/components/",
 			pathPrefix: false,
 		},
