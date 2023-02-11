@@ -9,7 +9,7 @@ export default defineNuxtConfig({
 		},
 	},
 	imports: {
-		dirs: ["stores", "assets/logos", "constants"],
+		dirs: ["stores", "assets/logos", "constants", "utils"],
 	},
 	modules: [
 		// ...
