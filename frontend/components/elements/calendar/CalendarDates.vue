@@ -3,8 +3,12 @@
 		class="bg-black m-auto mt h-3/4 w-2/3 justify-center p-8 flex flex-row items-center"
 	>
 		<div class="flex flex-col items-center p-2 grow shrink basis-0">
-			<div class="flex flex-row justify-evenly w-full">
-				<div>{{ month }} {{ year }}</div>
+			<div class="flex flex-row justify-evenly w-full item-center">
+				<div class="align-middle">
+					Time Zone
+					<span class="font-bold text-gray-300">EST</span>
+				</div>
+				<div class="font-bold text-lg">{{ month }} {{ year }}</div>
 				<div class="flex flex-row gap-8">
 					<ArrowIcon @click="changeMonth(-1)" class="arrow" />
 					<ArrowIcon @click="changeMonth(1)" class="rotate arrow" />
@@ -15,27 +19,21 @@
 					{{ day }}
 				</div>
 				<div v-for="day in monthArray" class="calendar-cell">
-					<div :class="showAvailableCells(day)">
+					<div
+						:class="showAvailableCells(day)"
+						@click="setChosenDay(day)"
+					>
 						{{ day }}
 					</div>
 				</div>
 			</div>
-			<div>Time Zone EST</div>
 		</div>
-		<div class="grow shrink bg-white h-full basis-0 p-3">
-			<div
-				class="w-full flex flex-col justify-center items-center text-black h-full gap-5"
-			>
-				<div>Tuesday, February 14</div>
-				<div class="overflow-y-auto w-full flex flex-col items-center">
-					<div
-						v-for="time in toTimeString(calendar.availableTimes)"
-						class="text-center p-4 border-backgroundSecondary border-2 mb-2 rounded-md w-1/2"
-					>
-						{{ time }}
-					</div>
-				</div>
-			</div>
+		<div class="grow shrink h-full basis-0 p-3">
+			<AppointmentTimes
+				:times="toTimeString(calendar.availableTimes)"
+				:chosen-day-string="chosenDayString"
+				:chosen-day="chosenDay"
+			/>
 		</div>
 	</div>
 </template>
@@ -72,25 +70,24 @@
 </style>
 
 <script setup lang="ts">
+import { set } from "nuxt/dist/app/compat/capi";
 import { useCalendarStore } from "~~/stores/calendar";
-const daysOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-const months = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"November",
-	"October",
-	"December",
-];
 const monthIndex = ref(1);
 const year = ref(2023);
 const today = new Date();
+const chosenDay = ref(new Date(year.value, monthIndex.value, today.getDate()));
+
+const setChosenDay = (day: number) => {
+	chosenDay.value = new Date(year.value, monthIndex.value, day);
+};
+const month = computed(() => {
+	return months[monthIndex.value];
+});
+const chosenDayString = computed(() => {
+	return `${chosenDay.value.toLocaleString("en-us", {
+		weekday: "long",
+	})}, ${months[chosenDay.value.getMonth()]} ${chosenDay.value.getDate()}`;
+});
 const changeMonth = (v: number) => {
 	monthIndex.value = monthIndex.value + v;
 	if (monthIndex.value == 12) {
@@ -104,9 +101,7 @@ const changeMonth = (v: number) => {
 		return;
 	}
 };
-const month = computed(() => {
-	return months[monthIndex.value];
-});
+
 const getDaysForMonth = computed((): number => {
 	return new Date(year.value, monthIndex.value + 1, 0).getDate();
 });
@@ -123,7 +118,8 @@ const monthArray = computed(() => {
 });
 
 const showAvailableCells = (day: any) => {
-	if (day == " " || day <= today.getDate()) {
+	const currentDate = new Date(year.value, monthIndex.value, day);
+	if (day == " " || currentDate <= today) {
 		return "";
 	}
 	return "available-day";

@@ -2,9 +2,7 @@
 	<div class="w-screen h-screen default-bg flex flex-col px-20">
 		<Header />
 		<FindPracticePortion class="self-center" />
-		<div>
-			<DashboardSessions />
-		</div>
+		<DashboardSessions />
 		<Calendar v-if="showCalendar" />
 	</div>
 </template>

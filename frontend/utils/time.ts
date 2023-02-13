@@ -2,7 +2,27 @@ export interface Time {
 	hours: number;
 	minutes: number;
 }
-const getDigits = (num: number) => {
+export const getFullWeekdayName = (date: Date) => {
+	return `${date.toLocaleString("en-us", {
+		weekday: "long",
+	})}`;
+};
+export const daysOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+export const months = [
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"November",
+	"October",
+	"December",
+];
+export const getDigits = (num: number) => {
 	return num.toString().length;
 };
 export const toTimeString = (times: Time[]) => {
