@@ -44,8 +44,9 @@ const resetButtonSelection = () => {
 };
 const confirmSelection = () => {
 	const newSession = {
-		language: "Mandarin",
-		date: chosenDay,
+		languageLearning: "Mandarin",
+		appointmentDate: chosenDay,
+		peerName: null,
 	};
 	addUpcomingSessions(newSession);
 	resetButtonSelection();

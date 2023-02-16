@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="bg-black m-auto mt h-3/4 w-2/3 justify-center p-8 flex flex-row items-center"
+		class="bg-black m-auto h-3/4 w-2/3 justify-center p-8 flex flex-row items-center"
 	>
 		<div class="flex flex-col items-center p-2 grow shrink basis-0">
 			<div class="flex flex-row justify-evenly w-full item-center">

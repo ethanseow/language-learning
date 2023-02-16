@@ -24,8 +24,8 @@
 					Your Work
 				</div>
 			</div>
-			<div class="border-[1px] border-white w-max">
-				<img :src="imageUrl" class="w-[300px] h-[150px]" />
+			<div class="border-[1px] border-white w-[300px] h-[150px]">
+				<img :src="imageUrl" class="w-full h-full" />
 			</div>
 		</div>
 		<div class="text-center bg-red-800 w-full">{{ languageLearning }}</div>
@@ -42,5 +42,9 @@ const { appointmentDate, languageLearning, peerName } = defineProps<{
 const date = computed(() => {
 	return `${appointmentDate.getMonth() + 1}/${appointmentDate.getDate()}`;
 });
+const time = computed(() => {
+	return `${appointmentDate.getHours()}:${appointmentDate.getMinutes()}`;
+});
 const imageUrl = getImageFromLang(languageLearning);
+console.log(imageUrl);
 </script>

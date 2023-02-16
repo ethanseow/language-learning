@@ -18,5 +18,5 @@ export const getImageFromLang = (lang: string) => {
 			break;
 		default:
 	}
-	return new URL(`/assets/images/${fileName}`, import.meta.url).href;
+	return `/img/${fileName}`;
 };
