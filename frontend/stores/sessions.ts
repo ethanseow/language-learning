@@ -2,21 +2,24 @@ import { defineStore } from "pinia";
 import { type Ref } from "vue";
 import { type Time } from "@/utils/time";
 export interface Session {
-	languageLearning: string;
+	languageOffering: string;
+	languageSeeking: string;
 	appointmentDate: Date;
 	peerName: string | null;
 }
 export const useSessionStore = defineStore("sessionStore", () => {
 	let pastSessions: Ref<Session[]> = ref([
 		{
-			languageLearning: "Mandarin",
+			languageOffering: "Mandarin",
+			languageSeeking: "English",
 			appointmentDate: new Date(2023, 1, 14, 10, 15),
 			peerName: "Bobby Schmurdah",
 		},
 	]);
 	let upcomingSessions: Ref<Session[]> = ref([
 		{
-			languageLearning: "Spanish",
+			languageOffering: "Mandarin",
+			languageSeeking: "English",
 			appointmentDate: new Date(2023, 1, 15, 9, 0),
 			peerName: null,
 		},

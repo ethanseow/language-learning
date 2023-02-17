@@ -28,8 +28,14 @@
 </template>
 
 <script setup lang="ts">
+import { useCalenderUIStore } from "@/stores/ui";
+import { useTempLanguageStore } from "~~/stores/temp/language";
+import { storeToRefs } from "pinia";
+
+const languageChoice = useTempLanguageStore();
+const { languageOffering, languageSeeking } = storeToRefs(languageChoice);
 const calendarUi = useCalenderUIStore();
-const { upcomingSessions, addUpcomingSessions } = useSessionStore();
+const { addUpcomingSessions } = useSessionStore();
 const { chosenDayString, times, chosenDay } = defineProps<{
 	chosenDayString: string;
 	times: string[];
@@ -42,9 +48,11 @@ const makeSelection = (buttonIndex: number) => {
 const resetButtonSelection = () => {
 	buttonSelection.value = -1;
 };
+
 const confirmSelection = () => {
 	const newSession = {
-		languageLearning: "Mandarin",
+		languageOffering: languageOffering.value,
+		languageSeeking: languageSeeking.value,
 		appointmentDate: chosenDay,
 		peerName: null,
 	};

@@ -27,6 +27,7 @@
 					</div>
 				</div>
 			</div>
+			<ChooseLanguage />
 		</div>
 		<div class="grow shrink h-full basis-0 p-3">
 			<AppointmentTimes
