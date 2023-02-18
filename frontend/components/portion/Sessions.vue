@@ -12,7 +12,7 @@
 				<th>Peer</th>
 				<th>Peer Feedback</th>
 			</tr>
-			<tr v-for="session in sessions" class="bg-gray-400">
+			<tr v-for="session in sortedSessions" class="bg-gray-400">
 				<td>
 					<div>{{ getDateTimeString(session.appointmentDate) }}</div>
 				</td>
@@ -87,6 +87,11 @@ const { usePastSession } = defineProps<{
 }>();
 console.log(usePastSession);
 const sessions = usePastSession ? pastSessions : upcomingSessions;
+const sortedSessions = computed(() => {
+	return sessions.value.slice().sort((a, b) => {
+		return b.appointmentDate.getTime() - a.appointmentDate.getTime();
+	});
+});
 const getDateTimeString = (date: Date) => {
 	return `${
 		months[date.getMonth()]

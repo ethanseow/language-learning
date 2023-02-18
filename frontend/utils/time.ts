@@ -7,6 +7,12 @@ export const getFullWeekdayName = (date: Date) => {
 		weekday: "long",
 	})}`;
 };
+
+export const getStringDateFormat = (date: Date) => {
+	return `${date.toLocaleString("en-us", {
+		weekday: "long",
+	})}, ${months[date.getMonth()]} ${date.getDate()}`;
+};
 export const daysOfTheWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 export const months = [
 	"January",
@@ -25,17 +31,20 @@ export const months = [
 export const getDigits = (num: number) => {
 	return num.toString().length;
 };
-export const toTimeString = (times: Time[]) => {
+export const toTimeString = (time: Time) => {
+	let hours = time.hours.toString();
+	let minutes = time.minutes.toString();
+	if (hours.length < 2) {
+		hours = "0" + hours;
+	}
+	if (minutes.length < 2) {
+		minutes = "0" + minutes;
+	}
+	return `${hours}:${minutes}`;
+};
+export const toTimeStrings = (times: Time[]) => {
 	return times.map((time) => {
-		let hours = time.hours.toString();
-		let minutes = time.minutes.toString();
-		if (hours.length < 2) {
-			hours = "0" + hours;
-		}
-		if (minutes.length < 2) {
-			minutes = "0" + minutes;
-		}
-		return `${hours}:${minutes}`;
+		toTimeString(time);
 	});
 };
 

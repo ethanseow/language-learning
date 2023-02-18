@@ -2,7 +2,7 @@
 	<div
 		class="w-full flex flex-col justify-center items-center text-white h-full gap-5"
 	>
-		<div>{{ chosenDayString }}</div>
+		<div>{{ props.chosenDayString }}</div>
 		<div class="overflow-y-auto w-full flex flex-col items-center">
 			<div
 				v-for="(time, index) in times"
@@ -13,12 +13,12 @@
 					class="p-4"
 					@click="makeSelection(index)"
 				>
-					{{ time }}
+					{{ toTimeString(time) }}
 				</div>
 				<div
 					v-if="buttonSelection == index"
 					class="bg-white text-black h-full w-full p-4"
-					@click="confirmSelection()"
+					@click="confirmSelection(time)"
 				>
 					Confirm?
 				</div>
@@ -31,16 +31,18 @@
 import { useCalenderUIStore } from "@/stores/ui";
 import { useTempLanguageStore } from "~~/stores/temp/language";
 import { storeToRefs } from "pinia";
-
+import { Time } from "~~/utils/time";
 const languageChoice = useTempLanguageStore();
 const { languageOffering, languageSeeking } = storeToRefs(languageChoice);
 const calendarUi = useCalenderUIStore();
 const { addUpcomingSessions } = useSessionStore();
-const { chosenDayString, times, chosenDay } = defineProps<{
+const props = defineProps<{
 	chosenDayString: string;
-	times: string[];
+	times: Time[];
 	chosenDay: Date;
 }>();
+const { chosenDayString, times, chosenDay } = toRefs(props);
+
 const buttonSelection = ref(-1);
 const makeSelection = (buttonIndex: number) => {
 	buttonSelection.value = buttonIndex;
@@ -49,16 +51,26 @@ const resetButtonSelection = () => {
 	buttonSelection.value = -1;
 };
 
-const confirmSelection = () => {
+const calendarFlowUiStore = useCalendarUIFlowStore();
+const { setCalendarFlowState, setTempData } = calendarFlowUiStore;
+
+const confirmSelection = (time: Time) => {
+	const date = new Date(chosenDay.value);
+	date.setHours(time.hours, time.minutes);
 	const newSession = {
 		languageOffering: languageOffering.value,
 		languageSeeking: languageSeeking.value,
-		appointmentDate: chosenDay,
+		appointmentDate: date,
 		peerName: null,
 	};
 	addUpcomingSessions(newSession);
 	resetButtonSelection();
-	calendarUi.setCalendar(false);
+	setTempData({
+		appointmentDate: date,
+		languageSeeking: languageSeeking.value,
+		languageOffering: languageOffering.value,
+	});
+	setCalendarFlowState(CalendarFlow.ThankYouSignupOverlay);
 };
 </script>
 

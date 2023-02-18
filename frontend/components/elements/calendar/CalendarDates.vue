@@ -27,11 +27,12 @@
 					</div>
 				</div>
 			</div>
+			<br />
 			<ChooseLanguage />
 		</div>
 		<div class="grow shrink h-full basis-0 p-3">
 			<AppointmentTimes
-				:times="toTimeString(calendar.availableTimes)"
+				:times="calendar.availableTimes"
 				:chosen-day-string="chosenDayString"
 				:chosen-day="chosenDay"
 			/>
@@ -71,16 +72,19 @@
 </style>
 
 <script setup lang="ts">
-import { set } from "nuxt/dist/app/compat/capi";
 import { useCalendarStore } from "~~/stores/calendar";
+
 const monthIndex = ref(1);
 const year = ref(2023);
 const today = new Date();
 const chosenDay = ref(new Date(year.value, monthIndex.value, today.getDate()));
-
 const setChosenDay = (day: number) => {
-	chosenDay.value = new Date(year.value, monthIndex.value, day);
+	const newDate = new Date(year.value, monthIndex.value, day);
+	if (today.getTime() < newDate.getTime()) {
+		chosenDay.value = new Date(year.value, monthIndex.value, day);
+	}
 };
+
 const month = computed(() => {
 	return months[monthIndex.value];
 });
