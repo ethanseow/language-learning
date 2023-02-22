@@ -12,7 +12,7 @@ export interface CalendarFlowProps {
 	languageSeeking: string;
 }
 const tempCalendarFlowProps = {
-	appointmentDate: new Date(1, 15),
+	appointmentDate: new Date(2023, 4, 6, 3, 15),
 	languageOffering: Languages.English,
 	languageSeeking: Languages.Mandarin,
 };
@@ -26,7 +26,7 @@ export const useCalenderUIStore = defineStore("calendarUIStore", () => {
 	return { showCalendar, setCalendar };
 });
 export const useCalendarUIFlowStore = defineStore("calendarFlowUiStore", () => {
-	const calendarFlowState = ref(CalendarFlow.ThankYouSignupOverlay);
+	const calendarFlowState = ref(CalendarFlow.CalendarOverlay);
 	const tempData: Ref<CalendarFlowProps> = ref({
 		...tempCalendarFlowProps,
 	});

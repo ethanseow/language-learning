@@ -7,6 +7,13 @@
 			Your Practice Session will be on
 			<span class="font-bold text-3xl">
 				{{ getStringDateFormat(props.appointmentDate) }}
+				-
+				{{
+					toTimeString({
+						hours: props.appointmentDate.getHours(),
+						minutes: props.appointmentDate.getMinutes(),
+					})
+				}}
 			</span>
 		</div>
 		<div class="text-center text-2xl">

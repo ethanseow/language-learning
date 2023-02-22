@@ -2,6 +2,11 @@
 export default defineNuxtConfig({
 	// ... other options
 	css: ["~/assets/css/main.css"],
+	runtimeConfig: {
+		public: {
+			apiBase: process.env.API_BASE || "incorrect api base",
+		},
+	},
 	postcss: {
 		plugins: {
 			tailwindcss: {},

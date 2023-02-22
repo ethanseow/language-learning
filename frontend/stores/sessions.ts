@@ -20,7 +20,7 @@ export const useSessionStore = defineStore("sessionStore", () => {
 		{
 			languageOffering: "Mandarin",
 			languageSeeking: "English",
-			appointmentDate: new Date(2023, 1, 15, 9, 0),
+			appointmentDate: new Date(2023, 1, 18, 9, 0),
 			peerName: null,
 		},
 	]);

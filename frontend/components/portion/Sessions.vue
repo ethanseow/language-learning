@@ -11,6 +11,8 @@
 				<th>Language Seeking</th>
 				<th>Peer</th>
 				<th>Peer Feedback</th>
+				<th v-if="!usePastSession">Meeting Room</th>
+				<th v-else></th>
 			</tr>
 			<tr v-for="session in sortedSessions" class="bg-gray-400">
 				<td>
@@ -57,6 +59,21 @@
 					</button>
 					<div v-else class="text-black font-thin">N/A</div>
 				</td>
+				<td v-if="!usePastSession" class="flex flex-row justify-center">
+					<button
+						v-if="allowMeetingRoom(session.appointmentDate)"
+						class="bg-green-400 text-white border-white border-[2px] py-1 px-6 rounded-md font-bold"
+					>
+						Join Meeting!
+					</button>
+					<div
+						v-else
+						class="bg-red-400 text-white border-white border-[2px] py-1 px-4 rounded-md font-bold w-max"
+					>
+						Waiting
+					</div>
+				</td>
+				<td v-else></td>
 			</tr>
 		</table>
 	</div>
@@ -99,5 +116,14 @@ const getDateTimeString = (date: Date) => {
 		"en-US",
 		{ hour: "numeric", minute: "numeric", hour12: true }
 	)}`;
+};
+const allowMeetingRoom = (date: Date) => {
+	const rightNow = new Date();
+
+	const fiveMinutesInMs = 60 * 60 * 1000;
+	if (date.getTime() - rightNow.getTime() <= fiveMinutesInMs) {
+		return true;
+	}
+	return false;
 };
 </script>
