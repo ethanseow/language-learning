@@ -1,5 +1,5 @@
 export type JoinRoomReq = {
-	userId: number;
+	userId: string;
 };
 export enum routes {
 	JOIN_ROOM = "/join-room",

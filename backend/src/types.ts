@@ -1,9 +1,13 @@
 export interface JoinRoomReq {
-	userId: number;
+	userId: string;
 }
 export interface JoinRoomRes {
-	roomId: number;
-	receivedParter: boolean;
+	roomId: string;
+}
+
+export interface SocketUser {
+	userId: string;
+	socketId: string;
 }
 export enum routes {
 	JOIN_ROOM = "/join-room",

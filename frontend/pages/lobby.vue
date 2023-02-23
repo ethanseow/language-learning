@@ -13,6 +13,8 @@
 <script setup lang="ts">
 const rand = String(Math.random() * 10000);
 const userId = useCookie("userId");
+const apiBase = useRuntimeConfig().public.apiBase;
+const socket = io(apiBase, {});
 const setUserId = (event: Event) => {
 	userId.value = event.target.value;
 };
