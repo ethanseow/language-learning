@@ -1,3 +1,5 @@
+import { Session } from "express-session";
+import type { IncomingHttpHeaders, IncomingMessage as i } from "http";
 export enum SocketEmits {
 	WAIT_FOR_ROOM = "waitForRoom",
 	JOIN_ROOM = "joinRoom",

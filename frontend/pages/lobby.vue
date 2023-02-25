@@ -1,23 +1,28 @@
 <template>
-	<div class="text-black">
-		<label for="userId">Set User Id</label>
-		<input
-			class="border-black border-[2px]"
-			name="userId"
-			@input="(e) => setUserId(e)"
-		/>
-		<NuxtLink to="/meeting">Find Room</NuxtLink>
+	<div class="text-black flex flex-col justify-center items-center">
+		<div>Hello this is a lobby room</div>
+		<div>
+			Your UserID:
+			{{ userId ? userId : "UNKNOWN USERID" }}
+		</div>
+		<div class="p-4 bg-purple-600 w-max">
+			<NuxtLink to="/meeting"> Find Room </NuxtLink>
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-const rand = String(Math.random() * 10000);
 const userId = useCookie("userId");
-const apiBase = useRuntimeConfig().public.apiBase;
-const socket = io(apiBase, {});
-const setUserId = (event: Event) => {
-	userId.value = event.target.value;
-};
+const roomId = ref("NULL");
+
+onMounted(() => {
+	if (!userId.value) {
+		userId.value =
+			String(Math.round(Math.random() * 10000)) +
+			"_" +
+			String(Math.round(Math.random() * 10000));
+	}
+});
 </script>
 
 <style scoped></style>
