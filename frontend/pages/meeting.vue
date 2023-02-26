@@ -1,7 +1,6 @@
 <template>
 	<div class="text-black flex flex-col items-center">
 		<div>Meeting Room</div>
-		<button class="p-4 bg-blue-600" @click="askServer">Ask Server</button>
 		<h1>Room: {{ roomId !== "NULL" ? roomId : "WAITING" }}</h1>
 		<div id="videos">
 			<video
@@ -17,6 +16,11 @@
 				ref="remoteUser"
 			></video>
 		</div>
+		<button class="p-4 bg-blue-600" @click="endMeeting">End Meeting</button>
+		<h1 class="text-black">
+			{{ connectionState }}
+		</h1>
+		<button @click="emitAnswer">Emit Answer</button>
 	</div>
 </template>
 
@@ -41,16 +45,45 @@ const remoteUser: Ref<HTMLVideoElement> = ref();
 const localStream: Ref<MediaStream> = ref();
 const remoteStream: Ref<MediaStream> = ref();
 
+const connectionState = computed(() => {
+	console.log(peerConnection.value);
+	if (peerConnection.value != undefined || peerConnection.value != null) {
+		switch (peerConnection.value.connectionState) {
+			case "closed":
+				return "Closed";
+				break;
+			case "connected":
+				return "Connected";
+				break;
+			case "connecting":
+				return "Connecting";
+				break;
+			case "failed":
+				return "Failed";
+				break;
+			case "new":
+				return "New";
+				break;
+			case "disconnected":
+				return "Disconnected";
+				break;
+			default:
+				return "Unknown";
+		}
+	} else {
+		return "Unestablished";
+	}
+});
+
 const isInitiator = ref(false);
 const roomId = ref("NULL");
 const userId = useCookie("userId");
-
 const apiBase = useRuntimeConfig().public.apiBase;
 const socket = io(apiBase, {
 	withCredentials: true,
 });
-const askServer = () => {
-	socket.emit("askServer");
+const emitAnswer = () => {
+	socket.emit("emitAnswers");
 };
 onMounted(() => {
 	if (!userId.value) {
@@ -71,6 +104,12 @@ let constraints = {
 	audio: false,
 };
 
+const endMeeting = () => {
+	socket.emit(SocketEmits.CLOSE_MEETING);
+	peerConnection.value.close();
+	remoteUser.value.srcObject = null;
+};
+
 const socketInit = () => {
 	const data: JoinRoomReq = {
 		userId: userId.value,
@@ -78,14 +117,19 @@ const socketInit = () => {
 	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 	socket.on(SocketEmits.JOIN_ROOM, (data: JoinedRoomReq) => {
 		roomId.value = data.roomId;
+
+		// need to fix issue when user returns back to browser
 		isInitiator.value = data.isInitiator;
+		console.log("isInitiator", isInitiator.value);
 		if (isInitiator.value == true) {
 			console.log("creating offer");
 			createOffer();
 		}
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
-		if (peerConnection.value) {
+		console.log("Got ice candidate");
+		if (peerConnection.value && peerConnection.value.remoteDescription) {
+			console.log("Adding ice candidate");
 			peerConnection.value.addIceCandidate(data.candidate);
 		}
 	});
@@ -138,14 +182,17 @@ const createOffer = async () => {
 };
 
 const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
+	console.log("at accept offer function");
 	await peerConnection.value.setRemoteDescription(offer);
 
 	let answer = await peerConnection.value.createAnswer();
 	await peerConnection.value.setLocalDescription(answer);
+	console.log("setting local description");
 
 	let data: SendAnswerReq = {
 		answer,
 	};
+	console.log("emitting socket");
 	socket.emit(SocketEmits.EMIT_ANSWER, data);
 };
 
