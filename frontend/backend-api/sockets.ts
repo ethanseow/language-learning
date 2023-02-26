@@ -14,7 +14,8 @@ export interface JoinRoomReq {
 
 export interface JoinedRoomReq {
 	roomId: string;
-	isInitiator: boolean;
+	host: string;
+	guest: string;
 }
 export interface PartnerJoinedReq {
 	partnerUserId: string;

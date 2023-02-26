@@ -75,7 +75,6 @@ const connectionState = computed(() => {
 	}
 });
 
-const isInitiator = ref(false);
 const roomId = ref("NULL");
 const userId = useCookie("userId");
 const apiBase = useRuntimeConfig().public.apiBase;
@@ -85,14 +84,14 @@ const socket = io(apiBase, {
 const emitAnswer = () => {
 	socket.emit("emitAnswers");
 };
-onMounted(() => {
+onMounted(async () => {
 	if (!userId.value) {
 		userId.value =
 			String(Math.round(Math.random() * 10000)) +
 			"_" +
 			String(Math.round(Math.random() * 10000));
 	}
-	createPeerConnection();
+	await createPeerConnection();
 	socketInit();
 });
 
@@ -117,18 +116,17 @@ const socketInit = () => {
 	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 	socket.on(SocketEmits.JOIN_ROOM, (data: JoinedRoomReq) => {
 		roomId.value = data.roomId;
-
-		// need to fix issue when user returns back to browser
-		isInitiator.value = data.isInitiator;
-		console.log("isInitiator", isInitiator.value);
-		if (isInitiator.value == true) {
+		if (userId.value == data.host) {
+			console.log("I am the host");
 			console.log("creating offer");
 			createOffer();
+		} else {
+			console.log("I am the guest");
 		}
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
 		console.log("Got ice candidate");
-		if (peerConnection.value && peerConnection.value.remoteDescription) {
+		if (peerConnection.value) {
 			console.log("Adding ice candidate");
 			peerConnection.value.addIceCandidate(data.candidate);
 		}
@@ -198,6 +196,7 @@ const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
 
 const acceptAnswer = async (answer: RTCSessionDescriptionInit) => {
 	if (!peerConnection.value.currentRemoteDescription) {
+		console.log("fully connected");
 		peerConnection.value.setRemoteDescription(answer);
 	}
 };

@@ -123,14 +123,14 @@ io.on("connection", (socket) => {
 		if (usersInRoom.hasOwnProperty(userId)) {
 			console.log("Joining Existing Room");
 			const roomNumber = usersInRoom[userId];
-			const room = establishedRooms[roomNumber];
-
+			const room: Room = establishedRooms[roomNumber];
 			const data: JoinedRoomReq = {
-				roomId: room,
-				isInitiator: false,
+				roomId: roomNumber,
+				host: room.host,
+				guest: room.guest,
 			};
-			socket.join(room);
-			io.to(room).emit(SocketEmits.JOIN_ROOM, data);
+			socket.join(roomNumber);
+			io.to(roomNumber).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
 			if (userPool.length >= 1) {
 				console.log("Room is available, sending them to room");
@@ -138,41 +138,35 @@ io.on("connection", (socket) => {
 					String(Math.round(Math.random() * 1000000)) +
 					"_" +
 					String(Math.round(Math.random() * 1000000));
-				let randomUser = _.sample(userPool);
+				let randomIndex = _.sample(
+					Object.keys(userPool).map((k) => parseInt(k))
+				);
+				let randomUser = userPool[randomIndex];
 				if (randomUser.socketId == socket.id) {
 					return;
 				}
-				establishedRooms[randomRoomId] = {
+				const room: Room = {
 					host: randomUser.userId,
 					guest: userId,
 				};
+				establishedRooms[randomRoomId] = room;
 				usersInRoom[userId] = randomRoomId;
 				usersInRoom[randomUser.userId] = randomRoomId;
-
 				console.log("Other in-pool user", randomUser);
 				let s = await io.in(randomUser.socketId).fetchSockets();
 				if (s.length == 0) {
 					return;
 				}
 				let waitingSocket = s[0];
-				userPool = userPool.filter(
-					(u) => u.userId != randomUser.userId
-				);
-
+				userPool.splice(randomIndex, 1);
 				socket.join(randomRoomId);
 				waitingSocket.join(randomRoomId);
-				waitingSocket.emit(SocketEmits.PARTNER_JOINED);
-
-				const waitingSocketData: JoinedRoomReq = {
+				const data: JoinedRoomReq = {
 					roomId: randomRoomId,
-					isInitiator: true,
+					host: room.host,
+					guest: room.guest,
 				};
-				const newerSocketData: JoinedRoomReq = {
-					roomId: randomRoomId,
-					isInitiator: false,
-				};
-				socket.emit(SocketEmits.JOIN_ROOM, newerSocketData);
-				waitingSocket.emit(SocketEmits.JOIN_ROOM, waitingSocketData);
+				io.to(randomRoomId).emit(SocketEmits.JOIN_ROOM, data);
 			} else {
 				console.log("Room is unavailable, putting in pool");
 				const user: SocketUser = {
@@ -218,11 +212,15 @@ io.on("connection", (socket) => {
 		console.log("Recevied offer from", socket.id);
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
 	});
+	/*
 	// have to decide how to deal with on leave and who is initiator
 	socket.on("disconnecting", () => {
 		const userId = req.session.userId;
 		const roomNumber = usersInRoom[userId];
 		const room: Room = establishedRooms[roomNumber];
+		if (room == undefined) {
+			return;
+		}
 		if (room.host == userId) {
 			room.host = room.guest;
 			room.guest = null;
@@ -233,6 +231,7 @@ io.on("connection", (socket) => {
 			delete establishedRooms[roomNumber];
 		}
 	});
+    */
 });
 
 app.get("/", (req, res) => {
