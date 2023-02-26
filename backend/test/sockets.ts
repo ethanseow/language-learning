@@ -6,7 +6,8 @@ export enum SocketEmits {
 	PARTNER_JOINED = "partnerJoined",
 	EMIT_CANDIDATE = "emitCandidate",
 	EMIT_OFFER = "emitOffer",
-	EMIT_ANSWER = "emiteAnswer",
+	EMIT_ANSWER = "emitAnswers",
+	CLOSE_MEETING = "closeMeeting",
 }
 
 export interface JoinRoomReq {

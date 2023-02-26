@@ -33,6 +33,12 @@ app.use(
 	})
 );
 app.use(bodyParser.json());
+
+type Room = {
+	host: string;
+	guest: string;
+};
+
 const establishedRooms = {};
 const usersInRoom = {};
 let userPool: SocketUser[] = [];
@@ -116,7 +122,9 @@ io.on("connection", (socket) => {
 		console.log("User joined", userId);
 		if (usersInRoom.hasOwnProperty(userId)) {
 			console.log("Joining Existing Room");
-			const room = usersInRoom[userId];
+			const roomNumber = usersInRoom[userId];
+			const room = establishedRooms[roomNumber];
+
 			const data: JoinedRoomReq = {
 				roomId: room,
 				isInitiator: false,
@@ -134,7 +142,10 @@ io.on("connection", (socket) => {
 				if (randomUser.socketId == socket.id) {
 					return;
 				}
-				establishedRooms[randomRoomId] = [userId, randomUser];
+				establishedRooms[randomRoomId] = {
+					host: randomUser.userId,
+					guest: userId,
+				};
 				usersInRoom[userId] = randomRoomId;
 				usersInRoom[randomUser.userId] = randomRoomId;
 
@@ -175,17 +186,22 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on(SocketEmits.EMIT_ANSWER, (data: SendAnswerReq) => {
+		console.log("got answer");
 		const userId = req.session.userId;
 		if (!usersInRoom.hasOwnProperty(userId)) {
+			console.log(usersInRoom);
+			console.log(userId);
 			return;
 		}
 		const room = usersInRoom[userId];
-		console.log("Received answer from", socket.id);
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_ANSWER, data);
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
+		console.log("got candidate");
 		const userId = req.session.userId;
 		if (!usersInRoom.hasOwnProperty(userId)) {
+			console.log(usersInRoom);
+			console.log(userId);
 			return;
 		}
 		const room = usersInRoom[userId];
@@ -194,6 +210,8 @@ io.on("connection", (socket) => {
 	socket.on(SocketEmits.EMIT_OFFER, (data: SendOfferReq) => {
 		const userId = req.session.userId;
 		if (!usersInRoom.hasOwnProperty(userId)) {
+			console.log(usersInRoom);
+			console.log(userId);
 			return;
 		}
 		const room = usersInRoom[userId];
@@ -201,7 +219,20 @@ io.on("connection", (socket) => {
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
 	});
 	// have to decide how to deal with on leave and who is initiator
-	socket.on("disconnecting", () => {});
+	socket.on("disconnecting", () => {
+		const userId = req.session.userId;
+		const roomNumber = usersInRoom[userId];
+		const room: Room = establishedRooms[roomNumber];
+		if (room.host == userId) {
+			room.host = room.guest;
+			room.guest = null;
+		} else {
+			room.guest = null;
+		}
+		if (room.host == null && room.guest == null) {
+			delete establishedRooms[roomNumber];
+		}
+	});
 });
 
 app.get("/", (req, res) => {
