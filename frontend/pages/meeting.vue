@@ -44,19 +44,18 @@ const localUser: Ref<HTMLVideoElement> = ref();
 const remoteUser: Ref<HTMLVideoElement> = ref();
 const localStream: Ref<MediaStream> = ref();
 const remoteStream: Ref<MediaStream> = ref();
-
+watch(peerConnection, () => {
+	console.log(peerConnection.value);
+});
 const connectionState = computed(() => {
 	console.log(peerConnection.value);
-	if (peerConnection.value != undefined || peerConnection.value != null) {
-		switch (peerConnection.value.connectionState) {
+	if (peerConnection.value != undefined && peerConnection.value != null) {
+		switch (peerConnection.value.iceConnectionState) {
 			case "closed":
 				return "Closed";
 				break;
 			case "connected":
 				return "Connected";
-				break;
-			case "connecting":
-				return "Connecting";
 				break;
 			case "failed":
 				return "Failed";
