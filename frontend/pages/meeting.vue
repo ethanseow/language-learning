@@ -18,7 +18,7 @@
 		</div>
 		<button class="p-4 bg-blue-600" @click="endMeeting">End Meeting</button>
 		<h1 class="text-black">
-			{{ connectionState }}
+			{{ connectionStateText }}
 		</h1>
 		<button @click="emitAnswer">Emit Answer</button>
 	</div>
@@ -44,13 +44,10 @@ const localUser: Ref<HTMLVideoElement> = ref();
 const remoteUser: Ref<HTMLVideoElement> = ref();
 const localStream: Ref<MediaStream> = ref();
 const remoteStream: Ref<MediaStream> = ref();
-watch(peerConnection, () => {
-	console.log(peerConnection.value);
-});
-const connectionState = computed(() => {
-	console.log(peerConnection.value);
-	if (peerConnection.value != undefined && peerConnection.value != null) {
-		switch (peerConnection.value.iceConnectionState) {
+const connectionState: Ref<RTCPeerConnectionState> = ref("closed");
+const connectionStateText = computed(() => {
+	if (connectionState.value) {
+		switch (connectionState.value) {
 			case "closed":
 				return "Closed";
 				break;
@@ -166,6 +163,10 @@ const createPeerConnection = async () => {
 			};
 			socket.emit(SocketEmits.EMIT_CANDIDATE, data);
 		}
+	};
+
+	peerConnection.value.onconnectionstatechange = (event) => {
+		connectionState.value = peerConnection.value.connectionState;
 	};
 };
 
