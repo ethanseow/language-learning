@@ -212,6 +212,7 @@ io.on("connection", (socket) => {
 		console.log("Recevied offer from", socket.id);
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
 	});
+	socket.on("disconnecting", () => {});
 	/*
 	// have to decide how to deal with on leave and who is initiator
 	socket.on("disconnecting", () => {

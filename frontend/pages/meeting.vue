@@ -2,6 +2,9 @@
 	<div class="text-black flex flex-col items-center">
 		<div>Meeting Room</div>
 		<h1>Room: {{ roomId !== "NULL" ? roomId : "WAITING" }}</h1>
+		<button class="p-3 bg-blue-600" @click="toggleState">
+			Toggle State
+		</button>
 		<div id="videos">
 			<video
 				class="video-player"
@@ -9,12 +12,20 @@
 				playsinline
 				ref="localUser"
 			></video>
-			<video
-				class="video-player"
-				autoplay
-				playsinline
-				ref="remoteUser"
-			></video>
+			<div
+				class="video-player flex flex-col justify-center items-center"
+				v-show="socketState == false"
+			>
+				Waiting For User
+			</div>
+			<div class="video-player" v-show="socketState == true">
+				<video
+					class="w-full h-full"
+					autoplay
+					playsinline
+					ref="remoteUser"
+				></video>
+			</div>
 		</div>
 		<button class="p-4 bg-blue-600" @click="endMeeting">End Meeting</button>
 		<h1 class="text-black">
@@ -38,16 +49,20 @@ import {
 import { SocketEmits } from "~~/backend-api/sockets";
 import { io } from "socket.io-client";
 import webRTC from "@/backend-api/webRTC";
-
 const peerConnection: Ref<RTCPeerConnection> = ref();
 const localUser: Ref<HTMLVideoElement> = ref();
 const remoteUser: Ref<HTMLVideoElement> = ref();
 const localStream: Ref<MediaStream> = ref();
 const remoteStream: Ref<MediaStream> = ref();
-const connectionState: Ref<RTCPeerConnectionState> = ref("closed");
+const socketState = ref(false);
+const connectionState: Ref<RTCIceConnectionState> = ref("closed");
 const connectionStateText = computed(() => {
 	if (connectionState.value) {
 		switch (connectionState.value) {
+			case "checking":
+				return "Checking";
+			case "completed":
+				return "Completed";
 			case "closed":
 				return "Closed";
 				break;
@@ -70,6 +85,9 @@ const connectionStateText = computed(() => {
 		return "Unestablished";
 	}
 });
+const toggleState = () => {
+	socketState.value = !socketState.value;
+};
 
 const roomId = ref("NULL");
 const userId = useCookie("userId");
@@ -165,8 +183,11 @@ const createPeerConnection = async () => {
 		}
 	};
 
-	peerConnection.value.onconnectionstatechange = (event) => {
-		connectionState.value = peerConnection.value.connectionState;
+	peerConnection.value.oniceconnectionstatechange = (event) => {
+		connectionState.value = peerConnection.value.iceConnectionState;
+		if (peerConnection.value.iceConnectionState === "connected") {
+			socketState.value = true;
+		}
 	};
 };
 
