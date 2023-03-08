@@ -8,6 +8,11 @@ export enum SocketEmits {
 	PARTNER_DISCONNECTED = "partnerDisconnected",
 }
 
+export enum SocketNamespaces {
+	WEB_RTC = "/webRtc",
+	TEXT_CHAT = "/textChat",
+}
+
 export interface JoinRoomReq {
 	userId: string;
 }

@@ -1,7 +1,7 @@
 import express, { Request, RequestHandler, Response } from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import type {
+import {
 	JoinRoomReq,
 	JoinedRoomReq,
 	PartnerJoinedReq,
@@ -9,6 +9,7 @@ import type {
 	SendOfferReq,
 	SendAnswerReq,
 	SocketUser,
+	SocketNamespaces,
 } from "./sockets";
 import { Server, Socket } from "socket.io";
 import consts from "./consts";
@@ -102,7 +103,10 @@ io.engine.on("initial_headers", (headers, req) => {
 	}
 });
 
-io.on("connection", (socket) => {
+const webRtcNamespace = io.of(SocketNamespaces.WEB_RTC);
+const textChatNamespace = io.of("/textChat");
+
+webRtcNamespace.on("connection", (socket) => {
 	const req = socket.request;
 	socket.use((__, next) => {
 		req.session.reload((err) => {
@@ -130,7 +134,7 @@ io.on("connection", (socket) => {
 				guest: room.guest,
 			};
 			socket.join(roomNumber);
-			io.to(roomNumber).emit(SocketEmits.JOIN_ROOM, data);
+			webRtcNamespace.to(roomNumber).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
 			if (userPool.length >= 1) {
 				console.log("Room is available, sending them to room");
@@ -153,7 +157,9 @@ io.on("connection", (socket) => {
 				usersInRoom[userId] = randomRoomId;
 				usersInRoom[randomUser.userId] = randomRoomId;
 				console.log("Other in-pool user", randomUser);
-				let s = await io.in(randomUser.socketId).fetchSockets();
+				let s = await webRtcNamespace
+					.in(randomUser.socketId)
+					.fetchSockets();
 				if (s.length == 0) {
 					return;
 				}
@@ -166,7 +172,9 @@ io.on("connection", (socket) => {
 					host: room.host,
 					guest: room.guest,
 				};
-				io.to(randomRoomId).emit(SocketEmits.JOIN_ROOM, data);
+				webRtcNamespace
+					.to(randomRoomId)
+					.emit(SocketEmits.JOIN_ROOM, data);
 			} else {
 				console.log("Room is unavailable, putting in pool");
 				const user: SocketUser = {
@@ -215,6 +223,7 @@ io.on("connection", (socket) => {
 	socket.on("disconnecting", () => {
 		const userId = req.session.userId;
 		const roomNumber = usersInRoom[userId];
+		delete usersInRoom[userId];
 		if (!roomNumber) {
 			// this will need to optimized
 			userPool = userPool.filter((user) => {
@@ -223,6 +232,7 @@ io.on("connection", (socket) => {
 			return;
 		}
 		const room: Room = establishedRooms[roomNumber];
+
 		// switch hosts
 		if (room.host == userId) {
 			room.host = room.guest;
@@ -230,29 +240,12 @@ io.on("connection", (socket) => {
 		} else if (room.guest == userId) {
 			room.guest = null;
 		}
-		socket.broadcast.to(roomNumber).emit(SocketEmits.PARTNER_DISCONNECTED);
-	});
-
-	/*
-	// have to decide how to deal with on leave and who is initiator
-	socket.on("disconnecting", () => {
-		const userId = req.session.userId;
-		const roomNumber = usersInRoom[userId];
-		const room: Room = establishedRooms[roomNumber];
-		if (room == undefined) {
+		if (room.guest == null && room.host == null) {
+			delete establishedRooms[roomNumber];
 			return;
 		}
-		if (room.host == userId) {
-			room.host = room.guest;
-			room.guest = null;
-		} else {
-			room.guest = null;
-		}
-		if (room.host == null && room.guest == null) {
-			delete establishedRooms[roomNumber];
-		}
+		socket.broadcast.to(roomNumber).emit(SocketEmits.PARTNER_DISCONNECTED);
 	});
-    */
 });
 
 app.get("/", (req, res) => {
