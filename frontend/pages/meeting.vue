@@ -105,7 +105,7 @@ onMounted(async () => {
 			"_" +
 			String(Math.round(Math.random() * 10000));
 	}
-	await createPeerConnection();
+	await rtcInit();
 	socketInit();
 });
 
@@ -117,8 +117,64 @@ let constraints = {
 	audio: false,
 };
 
+const rtcInit = async () => {
+	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
+
+	localUser.value.srcObject = localStream.value;
+	peerConnection.value = new RTCPeerConnection(webRTC.servers);
+};
+
+const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
+	if (event.candidate) {
+		const data: CandidateFoundReq = {
+			candidate: event.candidate,
+		};
+		socket.emit(SocketEmits.EMIT_CANDIDATE, data);
+	}
+};
+
+const onTrack = (event: RTCTrackEvent) => {
+	event.streams[0].getTracks().forEach((track) => {
+		remoteStream.value.addTrack(track);
+	});
+};
+
+const onIceConnectionStateChange = (event: any) => {
+	connectionState.value = peerConnection.value.iceConnectionState;
+	if (peerConnection.value.iceConnectionState === "connected") {
+		socketState.value = true;
+	}
+};
+
+const startConnection = async () => {
+	remoteStream.value = new MediaStream();
+	remoteUser.value.srcObject = remoteStream.value;
+	localStream.value.getTracks().forEach((track) => {
+		peerConnection.value.addTrack(track, localStream.value);
+	});
+
+	peerConnection.value.ontrack = onTrack;
+	peerConnection.value.onicecandidate = onIceCandidate;
+	peerConnection.value.oniceconnectionstatechange =
+		onIceConnectionStateChange;
+};
+
+const stopConnection = async () => {
+	localStream.value.getTracks().forEach(() => {});
+	peerConnection.value.removeEventListener("track", onTrack);
+	peerConnection.value.removeEventListener(
+		"iceconnectionstatechange",
+		onIceConnectionStateChange
+	);
+	socketState.value = false;
+	peerConnection.value.removeEventListener("icecandidate", onIceCandidate);
+	peerConnection.value.close();
+	// refresh new peerConnection
+	peerConnection.value = new RTCPeerConnection(webRTC.servers);
+};
+
 const endMeeting = () => {
-	socket.emit(SocketEmits.CLOSE_MEETING);
+	//socket.emit(SocketEmits.CLOSE_MEETING);
 	peerConnection.value.close();
 	remoteUser.value.srcObject = null;
 };
@@ -128,7 +184,8 @@ const socketInit = () => {
 		userId: userId.value,
 	};
 	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
-	socket.on(SocketEmits.JOIN_ROOM, (data: JoinedRoomReq) => {
+	socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
+		startConnection();
 		roomId.value = data.roomId;
 		if (userId.value == data.host) {
 			console.log("I am the host");
@@ -145,7 +202,6 @@ const socketInit = () => {
 			peerConnection.value.addIceCandidate(data.candidate);
 		}
 	});
-	socket.on(SocketEmits.PARTNER_JOINED, (data: PartnerJoinedReq) => {});
 	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
 		console.log("Accepting offer");
 		acceptOffer(data.offer);
@@ -154,41 +210,9 @@ const socketInit = () => {
 		console.log("Accepting answer");
 		acceptAnswer(data.answer);
 	});
-};
-
-const createPeerConnection = async () => {
-	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
-
-	localUser.value.srcObject = localStream.value;
-	peerConnection.value = new RTCPeerConnection(webRTC.servers);
-	remoteStream.value = new MediaStream();
-	remoteUser.value.srcObject = remoteStream.value;
-
-	localStream.value.getTracks().forEach((track) => {
-		peerConnection.value.addTrack(track, localStream.value);
+	socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
+		stopConnection();
 	});
-
-	peerConnection.value.ontrack = (event) => {
-		event.streams[0].getTracks().forEach((track) => {
-			remoteStream.value.addTrack(track);
-		});
-	};
-
-	peerConnection.value.onicecandidate = async (event) => {
-		if (event.candidate) {
-			const data: CandidateFoundReq = {
-				candidate: event.candidate,
-			};
-			socket.emit(SocketEmits.EMIT_CANDIDATE, data);
-		}
-	};
-
-	peerConnection.value.oniceconnectionstatechange = (event) => {
-		connectionState.value = peerConnection.value.iceConnectionState;
-		if (peerConnection.value.iceConnectionState === "connected") {
-			socketState.value = true;
-		}
-	};
 };
 
 const createOffer = async () => {

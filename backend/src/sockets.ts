@@ -5,6 +5,7 @@ export enum SocketEmits {
 	EMIT_CANDIDATE = "emitCandidate",
 	EMIT_OFFER = "emitOffer",
 	EMIT_ANSWER = "emitAnswer",
+	PARTNER_DISCONNECTED = "partnerDisconnected",
 }
 
 export interface JoinRoomReq {

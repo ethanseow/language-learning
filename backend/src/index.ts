@@ -212,7 +212,27 @@ io.on("connection", (socket) => {
 		console.log("Recevied offer from", socket.id);
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
 	});
-	socket.on("disconnecting", () => {});
+	socket.on("disconnecting", () => {
+		const userId = req.session.userId;
+		const roomNumber = usersInRoom[userId];
+		if (!roomNumber) {
+			// this will need to optimized
+			userPool = userPool.filter((user) => {
+				return user.socketId != socket.id;
+			});
+			return;
+		}
+		const room: Room = establishedRooms[roomNumber];
+		// switch hosts
+		if (room.host == userId) {
+			room.host = room.guest;
+			room.guest = null;
+		} else if (room.guest == userId) {
+			room.guest = null;
+		}
+		socket.broadcast.to(roomNumber).emit(SocketEmits.PARTNER_DISCONNECTED);
+	});
+
 	/*
 	// have to decide how to deal with on leave and who is initiator
 	socket.on("disconnecting", () => {
