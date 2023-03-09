@@ -6,10 +6,26 @@ export enum SocketEmits {
 	EMIT_OFFER = "emitOffer",
 	EMIT_ANSWER = "emitAnswer",
 	PARTNER_DISCONNECTED = "partnerDisconnected",
+	GET_ALL_MESSAGES = "getAllMessages",
+	SEND_MESSAGE = "sendMessage",
 }
-
+export enum SocketNamespaces {
+	WEB_RTC = "/webRtc",
+	TEXT_CHAT = "/textChat",
+}
 export interface JoinRoomReq {
 	userId: string;
+}
+
+export type Message = {
+	ownerId: string;
+	id: string;
+	timestamp: Date;
+	data: string;
+};
+
+export interface GetAllMessagesRes {
+	messsages: Message[];
 }
 
 export interface JoinedRoomReq {

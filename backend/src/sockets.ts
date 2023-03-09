@@ -6,6 +6,8 @@ export enum SocketEmits {
 	EMIT_OFFER = "emitOffer",
 	EMIT_ANSWER = "emitAnswer",
 	PARTNER_DISCONNECTED = "partnerDisconnected",
+	GET_ALL_MESSAGES = "getAllMessages",
+	SEND_MESSAGE = "sendMessage",
 }
 
 export enum SocketNamespaces {
@@ -16,6 +18,13 @@ export enum SocketNamespaces {
 export interface JoinRoomReq {
 	userId: string;
 }
+
+export type Message = {
+	ownerId: string;
+	id: string;
+	timestamp: Date;
+	data: string;
+};
 
 export interface JoinedRoomReq {
 	roomId: string;

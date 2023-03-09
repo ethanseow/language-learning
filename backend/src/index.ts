@@ -11,6 +11,8 @@ import {
 	SocketUser,
 	SocketNamespaces,
 } from "./sockets";
+import { type Room } from "./types";
+import utils from "./utils/room";
 import { Server, Socket } from "socket.io";
 import consts from "./consts";
 import * as _ from "lodash";
@@ -35,18 +37,9 @@ app.use(
 );
 app.use(bodyParser.json());
 
-type Room = {
-	host: string;
-	guest: string;
-};
-
-const establishedRooms = {};
-const usersInRoom = {};
-let userPool: SocketUser[] = [];
-
-// convert a connect middleware to a Socket.IO middleware
-const wrap = (middleware) => (socket, next) =>
-	middleware(socket.request, {}, next);
+let establishedRooms: Record<string, Room> = {};
+let usersInRoom: Record<string, string> = {};
+let userPool: Record<string, SocketUser> = {};
 
 declare module "express-session" {
 	interface Session {
@@ -104,7 +97,7 @@ io.engine.on("initial_headers", (headers, req) => {
 });
 
 const webRtcNamespace = io.of(SocketNamespaces.WEB_RTC);
-const textChatNamespace = io.of("/textChat");
+const textChatNamespace = io.of(SocketNamespaces.TEXT_CHAT);
 
 webRtcNamespace.on("connection", (socket) => {
 	const req = socket.request;
@@ -124,34 +117,38 @@ webRtcNamespace.on("connection", (socket) => {
 			req.session.save();
 		}
 		console.log("User joined", userId);
-		if (usersInRoom.hasOwnProperty(userId)) {
+		if (utils.userHasRoom(userId, usersInRoom)) {
 			console.log("Joining Existing Room");
-			const roomNumber = usersInRoom[userId];
-			const room: Room = establishedRooms[roomNumber];
+			const room = utils.getRoomForUser(
+				userId,
+				usersInRoom,
+				establishedRooms
+			);
 			const data: JoinedRoomReq = {
-				roomId: roomNumber,
+				roomId: room.id,
 				host: room.host,
 				guest: room.guest,
 			};
-			socket.join(roomNumber);
-			webRtcNamespace.to(roomNumber).emit(SocketEmits.JOIN_ROOM, data);
+			socket.join(room.id);
+			webRtcNamespace.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
-			if (userPool.length >= 1) {
+			if (Object.keys(userPool).length >= 1) {
 				console.log("Room is available, sending them to room");
 				let randomRoomId =
 					String(Math.round(Math.random() * 1000000)) +
 					"_" +
 					String(Math.round(Math.random() * 1000000));
-				let randomIndex = _.sample(
-					Object.keys(userPool).map((k) => parseInt(k))
-				);
+				let randomIndex = _.sample(Object.keys(userPool));
 				let randomUser = userPool[randomIndex];
 				if (randomUser.socketId == socket.id) {
 					return;
 				}
 				const room: Room = {
+					id: randomRoomId,
 					host: randomUser.userId,
 					guest: userId,
+					numInRoom: 2,
+					messages: [],
 				};
 				establishedRooms[randomRoomId] = room;
 				usersInRoom[userId] = randomRoomId;
@@ -164,7 +161,7 @@ webRtcNamespace.on("connection", (socket) => {
 					return;
 				}
 				let waitingSocket = s[0];
-				userPool.splice(randomIndex, 1);
+				delete userPool[randomUser.userId];
 				socket.join(randomRoomId);
 				waitingSocket.join(randomRoomId);
 				const data: JoinedRoomReq = {
@@ -181,7 +178,7 @@ webRtcNamespace.on("connection", (socket) => {
 					userId,
 					socketId: socket.id,
 				};
-				userPool.push(user);
+				userPool[userId] = user;
 			}
 			console.log(userPool);
 		}
@@ -221,31 +218,52 @@ webRtcNamespace.on("connection", (socket) => {
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
 	});
 	socket.on("disconnecting", () => {
+		console.log("disconnecting");
 		const userId = req.session.userId;
-		const roomNumber = usersInRoom[userId];
-		delete usersInRoom[userId];
-		if (!roomNumber) {
-			// this will need to optimized
-			userPool = userPool.filter((user) => {
-				return user.socketId != socket.id;
-			});
+		if (!utils.userHasRoom(userId, usersInRoom)) {
+			console.log("user not in any room, removing from pool", userPool);
+			delete userPool[userId];
+			console.log("updated userPool", userPool);
 			return;
 		}
-		const room: Room = establishedRooms[roomNumber];
-
-		// switch hosts
-		if (room.host == userId) {
-			room.host = room.guest;
-			room.guest = null;
-		} else if (room.guest == userId) {
-			room.guest = null;
+		const room = utils.getRoomForUser(
+			userId,
+			usersInRoom,
+			establishedRooms
+		);
+		let updatedRoom = utils.decrementRoomUsers(room);
+		if (utils.isHost(userId, room)) {
+			console.log("user is host", userId, "in room", room);
+			updatedRoom = utils.rotateHost(updatedRoom);
+			console.log("updated room", updatedRoom);
 		}
-		if (room.guest == null && room.host == null) {
-			delete establishedRooms[roomNumber];
+		if (updatedRoom.numInRoom <= 0) {
+			console.log("no users left in the room", updatedRoom);
+			delete usersInRoom[updatedRoom.host];
+			delete usersInRoom[updatedRoom.guest];
+			delete establishedRooms[room.id];
+			console.log("updated usersInRoom", usersInRoom);
+			console.log("updated establishedRooms", establishedRooms);
 			return;
 		}
-		socket.broadcast.to(roomNumber).emit(SocketEmits.PARTNER_DISCONNECTED);
+		establishedRooms[room.id] = updatedRoom;
+		socket.broadcast.to(room.id).emit(SocketEmits.PARTNER_DISCONNECTED);
 	});
+});
+
+textChatNamespace.on("connection", (socket) => {
+	const req = socket.request;
+	socket.use((__, next) => {
+		req.session.reload((err) => {
+			if (err) {
+				socket.disconnect();
+			} else {
+				next();
+			}
+		});
+	});
+
+	socket.on("message", () => {});
 });
 
 app.get("/", (req, res) => {
