@@ -81,6 +81,10 @@ import { SocketEmits } from "~~/backend-api/sockets";
 import { io } from "socket.io-client";
 import webRTC from "@/backend-api/webRTC";
 
+const { poolId } = defineProps<{
+	poolId: string | null;
+}>();
+
 const peerConnection: Ref<RTCPeerConnection> = ref();
 const localUser: Ref<HTMLVideoElement> = ref();
 const remoteUser: Ref<HTMLVideoElement> = ref();
@@ -236,6 +240,7 @@ const endMeeting = () => {
 const socketInit = () => {
 	const data: JoinRoomReq = {
 		userId: userId.value,
+		poolId,
 	};
 	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 	socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {

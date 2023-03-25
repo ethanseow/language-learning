@@ -41,6 +41,7 @@ app.use(bodyParser.json());
 let establishedRooms: Record<string, Room> = {};
 let usersInRoom: Record<string, string> = {};
 let userPool: Record<string, SocketUser> = {};
+let pools: Record<string, typeof userPool> = {};
 let allMessages: Message[] = [];
 
 declare module "express-session" {
@@ -116,6 +117,7 @@ io.on("connection", (socket) => {
 			req.session.userId = userId;
 			req.session.save();
 		}
+
 		console.log("User joined", userId);
 		if (utils.userHasRoom(userId, usersInRoom)) {
 			console.log("Joining Existing Room");
@@ -133,7 +135,7 @@ io.on("connection", (socket) => {
 			establishedRooms[room.id] = utils.incrementRoomUsers(room);
 			io.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
-			if (Object.keys(userPool).length >= 1) {
+			if (Object.keys(pools[data.poolId])?.length >= 1) {
 				console.log("Room is available, sending them to room");
 				let randomRoomId =
 					String(Math.round(Math.random() * 1000000)) +
@@ -176,6 +178,7 @@ io.on("connection", (socket) => {
 					socketId: socket.id,
 				};
 				userPool[userId] = user;
+				pools[data.poolId] = userPool;
 			}
 			console.log(userPool);
 		}
@@ -283,6 +286,7 @@ io.on("connection", (socket) => {
 		socket.broadcast.to(room.id).emit(SocketEmits.PARTNER_DISCONNECTED);
 	});
 });
+
 app.get("/", (req, res) => {
 	res.setHeader;
 	res.send({ data: "hello world" });

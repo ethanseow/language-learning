@@ -60,12 +60,18 @@
 					<div v-else class="text-black font-thin">N/A</div>
 				</td>
 				<td v-if="!usePastSession" class="flex flex-row justify-center">
-					<button
-						v-if="allowMeetingRoom(session.appointmentDate)"
+					<NuxtLink
+						v-if="true || allowMeetingRoom(session.appointmentDate)"
+						:to="{
+							name: urlConsts.MEETING,
+							params: {
+								poolId: session.appointmentDate.toDateString(),
+							},
+						}"
 						class="bg-green-400 text-white border-white border-[2px] py-1 px-6 rounded-md font-bold"
 					>
 						Join Meeting!
-					</button>
+					</NuxtLink>
 					<div
 						v-else
 						class="bg-red-400 text-white border-white border-[2px] py-1 px-4 rounded-md font-bold w-max"
@@ -98,6 +104,7 @@ tr:not(:first-child) td {
 import { type ComputedRef } from "vue";
 import { storeToRefs } from "pinia";
 import { Session } from "~~/stores/sessions";
+import { urlConsts } from "~~/constants/urlConsts";
 const { upcomingSessions, pastSessions } = storeToRefs(useSessionStore());
 const { usePastSession } = defineProps<{
 	usePastSession: boolean | null;
@@ -120,8 +127,9 @@ const getDateTimeString = (date: Date) => {
 const allowMeetingRoom = (date: Date) => {
 	const rightNow = new Date();
 
+	// issue - should be 5 instead of 60 here
 	const fiveMinutesInMs = 60 * 60 * 1000;
-	if (date.getTime() - rightNow.getTime() <= fiveMinutesInMs) {
+	if (Math.abs(date.getTime() - rightNow.getTime()) <= fiveMinutesInMs) {
 		return true;
 	}
 	return false;
