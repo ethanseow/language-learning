@@ -46,6 +46,7 @@ let allMessages: Message[] = [];
 declare module "express-session" {
 	interface Session {
 		userId: string;
+		room: string | null;
 	}
 }
 
@@ -129,6 +130,7 @@ io.on("connection", (socket) => {
 				guest: room.guest,
 			};
 			socket.join(room.id);
+			establishedRooms[room.id] = utils.incrementRoomUsers(room);
 			io.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
 			if (Object.keys(userPool).length >= 1) {
@@ -213,17 +215,21 @@ io.on("connection", (socket) => {
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
 	});
 	socket.on(SocketEmits.GET_ALL_MESSAGES, (emptyArg, callback) => {
-		callback({ messages: allMessages });
-	});
-	socket.on(SocketEmits.SHARE_SCREEN, (emptyArg, callback) => {
 		const userId = req.session.userId;
-		const room = usersInRoom[userId];
-		socket.broadcast
-			.to(room)
-			.emit(SocketEmits.SHARE_SCREEN, {}, (ackData) => {
-				console.log("Partner has discovered your share screen!");
-				callback("Share Screen successfully established!");
-			});
+		if (!utils.userHasRoom(userId, usersInRoom)) {
+			console.log(
+				"Sending Message - user",
+				userId,
+				"does not have a room"
+			);
+			return;
+		}
+		const room = utils.getRoomForUser(
+			userId,
+			usersInRoom,
+			establishedRooms
+		);
+		callback({ messages: room.messages });
 	});
 	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
 		const userId = req.session.userId;
@@ -257,6 +263,7 @@ io.on("connection", (socket) => {
 			usersInRoom,
 			establishedRooms
 		);
+
 		let updatedRoom = utils.decrementRoomUsers(room);
 		if (utils.isHost(userId, room)) {
 			console.log("user is host", userId, "in room", room);

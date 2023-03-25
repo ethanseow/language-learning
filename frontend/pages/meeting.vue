@@ -10,13 +10,6 @@
 		<div class="text-black flex flex-col items-center">
 			<div>Meeting Room</div>
 			<h1>Room: {{ roomId !== "NULL" ? roomId : "WAITING" }}</h1>
-			<button class="p-4 bg-purple-700 w-max" @click="openScreenShare">
-				Open Screen Share
-			</button>
-			<button class="p-4 bg-green-700 w-max" @click="newTrack">
-				Open New Track
-			</button>
-			<video src="" id="myVideo"></video>
 			<div id="videos">
 				<video
 					class="video-player"
@@ -24,14 +17,6 @@
 					playsinline
 					ref="localUser"
 				></video>
-				<div class="video-player">
-					<video
-						class="w-full h-full"
-						autoplay
-						playsinline
-						ref="shareScreenElem"
-					></video>
-				</div>
 				<div
 					class="video-player flex flex-col justify-center items-center"
 					v-show="socketState == false && roomId != null"
@@ -95,6 +80,7 @@ import { useAccountStore } from "@/stores/account";
 import { SocketEmits } from "~~/backend-api/sockets";
 import { io } from "socket.io-client";
 import webRTC from "@/backend-api/webRTC";
+
 const peerConnection: Ref<RTCPeerConnection> = ref();
 const localUser: Ref<HTMLVideoElement> = ref();
 const remoteUser: Ref<HTMLVideoElement> = ref();
@@ -102,44 +88,6 @@ const localStream: Ref<MediaStream> = ref();
 const remoteStream: Ref<MediaStream> = ref();
 const partnerId: Ref<string> = ref(null);
 const socketState = ref(false);
-
-const screenIsSharing = ref(false);
-const screenStream: Ref<MediaStream> = ref();
-const remoteScreenStream: Ref<MediaStream> = ref();
-const shareScreenElem: Ref<HTMLVideoElement> = ref();
-/*
-const toggleShareScreen = async () => {
-	const prevScreenIsSharing = screenIsSharing.value;
-	screenIsSharing.value = !screenIsSharing.value;
-    if(screenIsSharing.value){
-		if (screenStream == null || screenStream == undefined) {
-			const stream = await navigator.mediaDevices.getDisplayMedia({
-				audio: false,
-				video: true,
-			});
-			screenStream.value = stream;
-        }
-        screenStream.value.getTracks()
-        peerConnection.value.addTrack('screenShare',screenStream.value)
-
-    }
-	if (screenIsSharing.value) {
-			const stream = await navigator.mediaDevices.getDisplayMedia({
-				audio: false,
-				video: true,
-			});
-			screenStream.value = stream;
-		}else{
-
-        }
-	}else{
-
-    }
-};
-
-shareScreen
-
-*/
 
 const message = ref("");
 const sendMessage = () => {
@@ -185,27 +133,11 @@ const connectionStateText = computed(() => {
 		return "Unestablished";
 	}
 });
-const toggleState = () => {
-	socketState.value = !socketState.value;
-};
 
 const roomId = ref(null);
 const userId = useCookie("userId");
 const apiBase = useRuntimeConfig().public.apiBase;
-const allMessages: Ref<Message[]> = ref([
-	//{
-	//ownerId: "123",
-	//data: "partner message",
-	//id: "xyz",
-	//timestamp: new Date(),
-	//},
-	//{
-	//ownerId: userId.value,
-	//data: "owner message",
-	//id: "xyz",
-	//timestamp: new Date(),
-	//},
-]);
+const allMessages: Ref<Message[]> = ref([]);
 
 const socket = io(apiBase, {
 	withCredentials: true,
@@ -224,68 +156,12 @@ onMounted(async () => {
 });
 
 let constraints = {
-	video: false,
-	/*{
+	video: {
 		width: { min: 640, ideal: 1920, max: 1920 },
 		height: { min: 480, ideal: 1080, max: 1080 },
-	}*/ audio: true,
+	},
+	audio: true,
 };
-const newTrack = () => {
-	const videoElement = document.getElementById("myVideo");
-	const videoTrack = videoElement.captureStream().getVideoTracks()[0];
-	const mediaStream = new MediaStream();
-	mediaStream.addTrack(videoTrack);
-	peerConnection.value.addTrack(videoTrack, mediaStream);
-};
-const openScreenShare = async () => {
-	screenIsSharing.value = true;
-	screenStream.value = await navigator.mediaDevices.getDisplayMedia();
-	shareScreenElem.value.srcObject = screenStream.value;
-	// need to make sure that this is properly done before getTracks (ack)
-	screenStream.value.getTracks().forEach((track) => {
-		console.log("sending tracks", track);
-		if (peerConnection.value.connectionState != "connected") {
-			console.log("Not socket state");
-			return;
-		}
-		peerConnection.value.addTrack(track, screenStream.value);
-	});
-	/*
-	socket.emit(SocketEmits.SHARE_SCREEN, {}, (ackData: string) => {
-		console.log(ackData);
-		// need some way to close peerConnection screen share
-		screenStream.value.getTracks().forEach((track) => {
-			console.log("sending tracks", track);
-			if (peerConnection.value.connectionState != "connected") {
-				console.log("Not socket state");
-				return;
-			}
-			peerConnection.value.addTrack(track, screenStream.value);
-		});
-	});
-    */
-};
-
-const handlePartnerScreenShare = () => {
-	/*
-	// if I am already sharing screen
-	if (screenIsSharing.value) {
-	    screenStream.value.getTracks().forEach(() => {});
-	    shareScreenElem.value.srcObject = screenStream.value;
-	    peerConnection.value.addEventListener("track", onShareScreenTrack);
-	}
-    */
-	console.log("handling partner screen share");
-	screenIsSharing.value = true;
-	screenStream.value = new MediaStream();
-	remoteScreenStream.value = new MediaStream();
-	shareScreenElem.value.srcObject = remoteScreenStream.value;
-};
-
-const closeScreenShare = async () => {
-	screenIsSharing.value = false;
-};
-
 const rtcInit = async () => {
 	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
 	localUser.value.srcObject = localStream.value;
@@ -309,14 +185,6 @@ const onTrack = (event: RTCTrackEvent) => {
 		remoteStream.value.addTrack(track);
 	});
 };
-// can't have two event handlers - they will clash, both will run at same time, need some conditional
-const onShareScreenTrack = (event: RTCTrackEvent) => {
-	console.log(event.streams);
-	event.streams[0].getTracks().forEach((track) => {
-		console.log("Getting Share Screen Track");
-		remoteScreenStream.value.addTrack(track);
-	});
-};
 
 const onIceConnectionStateChange = (event: any) => {
 	connectionState.value = peerConnection.value.iceConnectionState;
@@ -331,29 +199,6 @@ const startConnection = async () => {
 	localStream.value.getTracks().forEach((track) => {
 		peerConnection.value.addTrack(track, localStream.value);
 	});
-	/*
-        3 - 11 - 2023
-        share screen issues, only one person can share a screen at a time
-        person sharing screen should not be able to see own screen
-        rtc streams and tracks resolution (see onTrack function)
-
-        stop sharing screen, start sharing screen button
-
-        requirements:
-        one person can share screen at a time
-        if another person share screen, popup will ask that you will cancel other's share screen
-        share screen is based on onclick only
-
-        share screen button
-        screenStream
-        screenStreamViewable
-        on click - emit a share screen to other user, closes any screenStream/viewable on both parties, 
-        then reinstantiates own screenStream as partner's screenStreamViewable
-
-        can we do this all within the same peerConnection?
-
-    */
-
 	peerConnection.value.addEventListener("track", onTrack);
 	peerConnection.value.onicecandidate = onIceCandidate;
 	peerConnection.value.oniceconnectionstatechange =
@@ -425,9 +270,6 @@ const socketInit = () => {
 	socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
 		stopConnection();
 	});
-	socket.on(SocketEmits.SHARE_SCREEN, () => {
-		handlePartnerScreenShare();
-	});
 	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
 		console.log("Previous allMessage", allMessages.value);
 		allMessages.value.push(message);
@@ -445,7 +287,9 @@ const loadAllMessages = async () => {
 				response.messages
 			);
 			const messages: Message[] = response.messages;
-			allMessages.value = messages;
+			if (messages) {
+				allMessages.value = messages;
+			}
 		}
 	);
 };
