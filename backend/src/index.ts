@@ -10,6 +10,7 @@ import {
 	SendAnswerReq,
 	SocketUser,
 	SocketNamespaces,
+	type Message,
 } from "./sockets";
 import { type Room } from "./types";
 import utils from "./utils/room";
@@ -40,6 +41,7 @@ app.use(bodyParser.json());
 let establishedRooms: Record<string, Room> = {};
 let usersInRoom: Record<string, string> = {};
 let userPool: Record<string, SocketUser> = {};
+let allMessages: Message[] = [];
 
 declare module "express-session" {
 	interface Session {
@@ -96,10 +98,7 @@ io.engine.on("initial_headers", (headers, req) => {
 	}
 });
 
-const webRtcNamespace = io.of(SocketNamespaces.WEB_RTC);
-const textChatNamespace = io.of(SocketNamespaces.TEXT_CHAT);
-
-webRtcNamespace.on("connection", (socket) => {
+io.on("connection", (socket) => {
 	const req = socket.request;
 	socket.use((__, next) => {
 		req.session.reload((err) => {
@@ -130,7 +129,7 @@ webRtcNamespace.on("connection", (socket) => {
 				guest: room.guest,
 			};
 			socket.join(room.id);
-			webRtcNamespace.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
+			io.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
 			if (Object.keys(userPool).length >= 1) {
 				console.log("Room is available, sending them to room");
@@ -154,9 +153,7 @@ webRtcNamespace.on("connection", (socket) => {
 				usersInRoom[userId] = randomRoomId;
 				usersInRoom[randomUser.userId] = randomRoomId;
 				console.log("Other in-pool user", randomUser);
-				let s = await webRtcNamespace
-					.in(randomUser.socketId)
-					.fetchSockets();
+				let s = await io.in(randomUser.socketId).fetchSockets();
 				if (s.length == 0) {
 					return;
 				}
@@ -169,9 +166,7 @@ webRtcNamespace.on("connection", (socket) => {
 					host: room.host,
 					guest: room.guest,
 				};
-				webRtcNamespace
-					.to(randomRoomId)
-					.emit(SocketEmits.JOIN_ROOM, data);
+				io.to(randomRoomId).emit(SocketEmits.JOIN_ROOM, data);
 			} else {
 				console.log("Room is unavailable, putting in pool");
 				const user: SocketUser = {
@@ -217,6 +212,37 @@ webRtcNamespace.on("connection", (socket) => {
 		console.log("Recevied offer from", socket.id);
 		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
 	});
+	socket.on(SocketEmits.GET_ALL_MESSAGES, (emptyArg, callback) => {
+		callback({ messages: allMessages });
+	});
+	socket.on(SocketEmits.SHARE_SCREEN, (emptyArg, callback) => {
+		const userId = req.session.userId;
+		const room = usersInRoom[userId];
+		socket.broadcast
+			.to(room)
+			.emit(SocketEmits.SHARE_SCREEN, {}, (ackData) => {
+				console.log("Partner has discovered your share screen!");
+				callback("Share Screen successfully established!");
+			});
+	});
+	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
+		const userId = req.session.userId;
+		if (!utils.userHasRoom(userId, usersInRoom)) {
+			console.log(
+				"Sending Message - user",
+				userId,
+				"does not have a room"
+			);
+			return;
+		}
+		const room = utils.getRoomForUser(
+			userId,
+			usersInRoom,
+			establishedRooms
+		);
+		room.messages.push(message);
+		socket.broadcast.to(room.id).emit(SocketEmits.SEND_MESSAGE, message);
+	});
 	socket.on("disconnecting", () => {
 		console.log("disconnecting");
 		const userId = req.session.userId;
@@ -250,22 +276,6 @@ webRtcNamespace.on("connection", (socket) => {
 		socket.broadcast.to(room.id).emit(SocketEmits.PARTNER_DISCONNECTED);
 	});
 });
-
-textChatNamespace.on("connection", (socket) => {
-	const req = socket.request;
-	socket.use((__, next) => {
-		req.session.reload((err) => {
-			if (err) {
-				socket.disconnect();
-			} else {
-				next();
-			}
-		});
-	});
-
-	socket.on("message", () => {});
-});
-
 app.get("/", (req, res) => {
 	res.setHeader;
 	res.send({ data: "hello world" });
