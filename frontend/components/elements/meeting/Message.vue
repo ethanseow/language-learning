@@ -10,11 +10,15 @@
 <script setup lang="ts">
 import { type Message } from "@/backend-api/sockets";
 import { useAccountStore } from "~~/stores/account";
-const accountStore = useAccountStore();
+// need to change this to be related to account - use local storage atm
+// const accountStore = useAccountStore();
+
+const userId = useCookie("userId");
+
 const myMessageCSS = computed(() => {
 	console.log("Message's Owner Id", message.ownerId);
-	console.log("Current Account's id", accountStore.account.userId);
-	if (message.ownerId != accountStore.account.userId) {
+	console.log("Current Account's id", userId.value);
+	if (message.ownerId == userId.value) {
 		return "bg-blue-500";
 	}
 	return "bg-white text-black";

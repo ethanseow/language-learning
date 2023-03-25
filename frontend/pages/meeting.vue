@@ -1,11 +1,22 @@
 <template>
 	<div class="flex flex-row justify-start p-2">
+		<div
+			v-if="socketState == false && roomId == null"
+			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
+		>
+			<p class="text-xl">Finding Available Partners</p>
+			<LoadingSpinner />
+		</div>
 		<div class="text-black flex flex-col items-center">
 			<div>Meeting Room</div>
 			<h1>Room: {{ roomId !== "NULL" ? roomId : "WAITING" }}</h1>
-			<button class="p-3 bg-blue-600" @click="toggleState">
-				Toggle State
+			<button class="p-4 bg-purple-700 w-max" @click="openScreenShare">
+				Open Screen Share
 			</button>
+			<button class="p-4 bg-green-700 w-max" @click="newTrack">
+				Open New Track
+			</button>
+			<video src="" id="myVideo"></video>
 			<div id="videos">
 				<video
 					class="video-player"
@@ -13,11 +24,20 @@
 					playsinline
 					ref="localUser"
 				></video>
+				<div class="video-player">
+					<video
+						class="w-full h-full"
+						autoplay
+						playsinline
+						ref="shareScreenElem"
+					></video>
+				</div>
 				<div
 					class="video-player flex flex-col justify-center items-center"
-					v-show="socketState == false"
+					v-show="socketState == false && roomId != null"
 				>
-					Waiting For User
+					<p>User Disconnected</p>
+					<p>Waiting For User</p>
 				</div>
 				<div class="video-player" v-show="socketState == true">
 					<video
@@ -83,30 +103,55 @@ const remoteStream: Ref<MediaStream> = ref();
 const partnerId: Ref<string> = ref(null);
 const socketState = ref(false);
 
-const allMessages: Ref<Message[]> = ref([
-	{
-		ownerId: "123",
-		data: "partner message",
-		id: "xyz",
-		timestamp: new Date(),
-	},
-	{
-		ownerId: "6045_8619",
-		data: "owner message",
-		id: "xyz",
-		timestamp: new Date(),
-	},
-]);
+const screenIsSharing = ref(false);
+const screenStream: Ref<MediaStream> = ref();
+const remoteScreenStream: Ref<MediaStream> = ref();
+const shareScreenElem: Ref<HTMLVideoElement> = ref();
+/*
+const toggleShareScreen = async () => {
+	const prevScreenIsSharing = screenIsSharing.value;
+	screenIsSharing.value = !screenIsSharing.value;
+    if(screenIsSharing.value){
+		if (screenStream == null || screenStream == undefined) {
+			const stream = await navigator.mediaDevices.getDisplayMedia({
+				audio: false,
+				video: true,
+			});
+			screenStream.value = stream;
+        }
+        screenStream.value.getTracks()
+        peerConnection.value.addTrack('screenShare',screenStream.value)
+
+    }
+	if (screenIsSharing.value) {
+			const stream = await navigator.mediaDevices.getDisplayMedia({
+				audio: false,
+				video: true,
+			});
+			screenStream.value = stream;
+		}else{
+
+        }
+	}else{
+
+    }
+};
+
+shareScreen
+
+*/
+
 const message = ref("");
-const sendMessage = (event: any) => {
-	if (textChatSocket.active) {
+const sendMessage = () => {
+	if (socket.active) {
 		const data: Message = {
-			id: new Crypto().randomUUID(),
+			id: crypto.randomUUID(),
 			data: message.value,
 			ownerId: userId.value,
 			timestamp: new Date(),
 		};
-		textChatSocket.emit(SocketEmits.SEND_MESSAGE, data);
+		allMessages.value.push(data);
+		socket.emit(SocketEmits.SEND_MESSAGE, data);
 	}
 };
 
@@ -144,30 +189,27 @@ const toggleState = () => {
 	socketState.value = !socketState.value;
 };
 
-const ownerMessages = computed(() => {
-	return allMessages.value.filter((message) => {
-		return message.ownerId == userId.value;
-	});
-});
-
-const partnerMessages = computed(() => {
-	return allMessages.value.filter((message) => {
-		return message.ownerId == partnerId.value;
-	});
-});
-
-const roomId = ref("NULL");
+const roomId = ref(null);
 const userId = useCookie("userId");
 const apiBase = useRuntimeConfig().public.apiBase;
+const allMessages: Ref<Message[]> = ref([
+	//{
+	//ownerId: "123",
+	//data: "partner message",
+	//id: "xyz",
+	//timestamp: new Date(),
+	//},
+	//{
+	//ownerId: userId.value,
+	//data: "owner message",
+	//id: "xyz",
+	//timestamp: new Date(),
+	//},
+]);
 
-const webRtcRoute = apiBase + SocketNamespaces.WEB_RTC;
-const textChatRoute = apiBase + SocketNamespaces.TEXT_CHAT;
-
-const webRtcSocket = io(webRtcRoute, {
+const socket = io(apiBase, {
 	withCredentials: true,
 });
-
-const textChatSocket = io(textChatRoute, { withCredentials: true });
 
 onMounted(async () => {
 	if (!userId.value) {
@@ -178,20 +220,74 @@ onMounted(async () => {
 		useAccountStore().setUserId(userId.value);
 	}
 	await rtcInit();
-	webRtcSocketInit();
+	socketInit();
 });
 
 let constraints = {
-	video: {
+	video: false,
+	/*{
 		width: { min: 640, ideal: 1920, max: 1920 },
 		height: { min: 480, ideal: 1080, max: 1080 },
-	},
-	audio: false,
+	}*/ audio: true,
+};
+const newTrack = () => {
+	const videoElement = document.getElementById("myVideo");
+	const videoTrack = videoElement.captureStream().getVideoTracks()[0];
+	const mediaStream = new MediaStream();
+	mediaStream.addTrack(videoTrack);
+	peerConnection.value.addTrack(videoTrack, mediaStream);
+};
+const openScreenShare = async () => {
+	screenIsSharing.value = true;
+	screenStream.value = await navigator.mediaDevices.getDisplayMedia();
+	shareScreenElem.value.srcObject = screenStream.value;
+	// need to make sure that this is properly done before getTracks (ack)
+	screenStream.value.getTracks().forEach((track) => {
+		console.log("sending tracks", track);
+		if (peerConnection.value.connectionState != "connected") {
+			console.log("Not socket state");
+			return;
+		}
+		peerConnection.value.addTrack(track, screenStream.value);
+	});
+	/*
+	socket.emit(SocketEmits.SHARE_SCREEN, {}, (ackData: string) => {
+		console.log(ackData);
+		// need some way to close peerConnection screen share
+		screenStream.value.getTracks().forEach((track) => {
+			console.log("sending tracks", track);
+			if (peerConnection.value.connectionState != "connected") {
+				console.log("Not socket state");
+				return;
+			}
+			peerConnection.value.addTrack(track, screenStream.value);
+		});
+	});
+    */
+};
+
+const handlePartnerScreenShare = () => {
+	/*
+	// if I am already sharing screen
+	if (screenIsSharing.value) {
+	    screenStream.value.getTracks().forEach(() => {});
+	    shareScreenElem.value.srcObject = screenStream.value;
+	    peerConnection.value.addEventListener("track", onShareScreenTrack);
+	}
+    */
+	console.log("handling partner screen share");
+	screenIsSharing.value = true;
+	screenStream.value = new MediaStream();
+	remoteScreenStream.value = new MediaStream();
+	shareScreenElem.value.srcObject = remoteScreenStream.value;
+};
+
+const closeScreenShare = async () => {
+	screenIsSharing.value = false;
 };
 
 const rtcInit = async () => {
 	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
-
 	localUser.value.srcObject = localStream.value;
 	peerConnection.value = new RTCPeerConnection(webRTC.servers);
 };
@@ -201,13 +297,24 @@ const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
 		const data: CandidateFoundReq = {
 			candidate: event.candidate,
 		};
-		webRtcSocket.emit(SocketEmits.EMIT_CANDIDATE, data);
+		socket.emit(SocketEmits.EMIT_CANDIDATE, data);
 	}
 };
 
+// not running when screenShare is addTrack
 const onTrack = (event: RTCTrackEvent) => {
+	console.log("track is added");
 	event.streams[0].getTracks().forEach((track) => {
+		console.log(track);
 		remoteStream.value.addTrack(track);
+	});
+};
+// can't have two event handlers - they will clash, both will run at same time, need some conditional
+const onShareScreenTrack = (event: RTCTrackEvent) => {
+	console.log(event.streams);
+	event.streams[0].getTracks().forEach((track) => {
+		console.log("Getting Share Screen Track");
+		remoteScreenStream.value.addTrack(track);
 	});
 };
 
@@ -224,8 +331,30 @@ const startConnection = async () => {
 	localStream.value.getTracks().forEach((track) => {
 		peerConnection.value.addTrack(track, localStream.value);
 	});
+	/*
+        3 - 11 - 2023
+        share screen issues, only one person can share a screen at a time
+        person sharing screen should not be able to see own screen
+        rtc streams and tracks resolution (see onTrack function)
 
-	peerConnection.value.ontrack = onTrack;
+        stop sharing screen, start sharing screen button
+
+        requirements:
+        one person can share screen at a time
+        if another person share screen, popup will ask that you will cancel other's share screen
+        share screen is based on onclick only
+
+        share screen button
+        screenStream
+        screenStreamViewable
+        on click - emit a share screen to other user, closes any screenStream/viewable on both parties, 
+        then reinstantiates own screenStream as partner's screenStreamViewable
+
+        can we do this all within the same peerConnection?
+
+    */
+
+	peerConnection.value.addEventListener("track", onTrack);
 	peerConnection.value.onicecandidate = onIceCandidate;
 	peerConnection.value.oniceconnectionstatechange =
 		onIceConnectionStateChange;
@@ -239,7 +368,15 @@ const stopConnection = async () => {
 		onIceConnectionStateChange
 	);
 	socketState.value = false;
+	remoteStream.value.getTracks().forEach((track) => {
+		track.stop();
+	});
 	peerConnection.value.removeEventListener("icecandidate", onIceCandidate);
+	peerConnection.value.removeEventListener("track", onTrack);
+	peerConnection.value.removeEventListener(
+		"iceconnectionstatechange",
+		onIceConnectionStateChange
+	);
 	peerConnection.value.close();
 	// refresh new peerConnection
 	peerConnection.value = new RTCPeerConnection(webRTC.servers);
@@ -251,14 +388,13 @@ const endMeeting = () => {
 	remoteUser.value.srcObject = null;
 };
 
-const webRtcSocketInit = () => {
+const socketInit = () => {
 	const data: JoinRoomReq = {
 		userId: userId.value,
 	};
-	webRtcSocket.emit(SocketEmits.WAIT_FOR_ROOM, data);
-	webRtcSocket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
+	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
+	socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
 		startConnection();
-		textChatSocketInit();
 		roomId.value = data.roomId;
 		if (userId.value == data.host) {
 			partnerId.value = data.guest;
@@ -266,44 +402,52 @@ const webRtcSocketInit = () => {
 			console.log("creating offer");
 			createOffer();
 		} else {
+			loadAllMessages();
 			console.log("I am the guest");
 			partnerId.value = data.guest;
 		}
 	});
-	webRtcSocket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
+	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
 		console.log("Got ice candidate");
 		if (peerConnection.value) {
 			console.log("Adding ice candidate");
 			peerConnection.value.addIceCandidate(data.candidate);
 		}
 	});
-	webRtcSocket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
+	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
 		console.log("Accepting offer");
 		acceptOffer(data.offer);
 	});
-	webRtcSocket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
+	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		console.log("Accepting answer");
 		acceptAnswer(data.answer);
 	});
-	webRtcSocket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
+	socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
 		stopConnection();
+	});
+	socket.on(SocketEmits.SHARE_SCREEN, () => {
+		handlePartnerScreenShare();
+	});
+	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
+		console.log("Previous allMessage", allMessages.value);
+		allMessages.value.push(message);
+		console.log("Appended allMessage", allMessages.value);
 	});
 };
 
-const textChatSocketInit = async () => {
-	textChatSocket.emit(SocketEmits.GET_ALL_MESSAGES, {}, (response: any) => {
-		const messages: Message[] = response.message;
-		allMessages.value = messages;
-	});
-	textChatSocket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
-		console.log("Previous allMessage", allMessages);
-		console.log("Previous owner messages", ownerMessages);
-		console.log("Previous partner messages", partnerMessages);
-		allMessages.value.push(message);
-		console.log("Appended allMessage", allMessages);
-		console.log("New owner messages", ownerMessages);
-		console.log("New partner messages", partnerMessages);
-	});
+const loadAllMessages = async () => {
+	socket.emit(
+		SocketEmits.GET_ALL_MESSAGES,
+		{ emptyArg: "emptyArg" },
+		(response: any) => {
+			console.log(
+				"loadAllMessages - Got all messages",
+				response.messages
+			);
+			const messages: Message[] = response.messages;
+			allMessages.value = messages;
+		}
+	);
 };
 
 const createOffer = async () => {
@@ -312,7 +456,7 @@ const createOffer = async () => {
 	const data: SendOfferReq = {
 		offer,
 	};
-	webRtcSocket.emit(SocketEmits.EMIT_OFFER, data);
+	socket.emit(SocketEmits.EMIT_OFFER, data);
 };
 
 const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
@@ -327,7 +471,7 @@ const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
 		answer,
 	};
 	console.log("emitting socket");
-	webRtcSocket.emit(SocketEmits.EMIT_ANSWER, data);
+	socket.emit(SocketEmits.EMIT_ANSWER, data);
 };
 
 const acceptAnswer = async (answer: RTCSessionDescriptionInit) => {
