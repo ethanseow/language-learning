@@ -1,11 +1,15 @@
 <template>
 	<div class="flex flex-row justify-start p-2">
+		<div
+			v-if="socketState == false && roomId == null"
+			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
+		>
+			<p class="text-xl">Finding Available Partners</p>
+			<LoadingSpinner />
+		</div>
 		<div class="text-black flex flex-col items-center">
 			<div>Meeting Room</div>
 			<h1>Room: {{ roomId !== "NULL" ? roomId : "WAITING" }}</h1>
-			<button class="p-3 bg-blue-600" @click="toggleState">
-				Toggle State
-			</button>
 			<div id="videos">
 				<video
 					class="video-player"
@@ -15,9 +19,10 @@
 				></video>
 				<div
 					class="video-player flex flex-col justify-center items-center"
-					v-show="socketState == false"
+					v-show="socketState == false && roomId != null"
 				>
-					Waiting For User
+					<p>User Disconnected</p>
+					<p>Waiting For User</p>
 				</div>
 				<div class="video-player" v-show="socketState == true">
 					<video
@@ -75,6 +80,7 @@ import { useAccountStore } from "@/stores/account";
 import { SocketEmits } from "~~/backend-api/sockets";
 import { io } from "socket.io-client";
 import webRTC from "@/backend-api/webRTC";
+
 const peerConnection: Ref<RTCPeerConnection> = ref();
 const localUser: Ref<HTMLVideoElement> = ref();
 const remoteUser: Ref<HTMLVideoElement> = ref();
@@ -83,30 +89,17 @@ const remoteStream: Ref<MediaStream> = ref();
 const partnerId: Ref<string> = ref(null);
 const socketState = ref(false);
 
-const allMessages: Ref<Message[]> = ref([
-	{
-		ownerId: "123",
-		data: "partner message",
-		id: "xyz",
-		timestamp: new Date(),
-	},
-	{
-		ownerId: "6045_8619",
-		data: "owner message",
-		id: "xyz",
-		timestamp: new Date(),
-	},
-]);
 const message = ref("");
-const sendMessage = (event: any) => {
-	if (textChatSocket.active) {
+const sendMessage = () => {
+	if (socket.active) {
 		const data: Message = {
-			id: new Crypto().randomUUID(),
+			id: crypto.randomUUID(),
 			data: message.value,
 			ownerId: userId.value,
 			timestamp: new Date(),
 		};
-		textChatSocket.emit(SocketEmits.SEND_MESSAGE, data);
+		allMessages.value.push(data);
+		socket.emit(SocketEmits.SEND_MESSAGE, data);
 	}
 };
 
@@ -140,34 +133,15 @@ const connectionStateText = computed(() => {
 		return "Unestablished";
 	}
 });
-const toggleState = () => {
-	socketState.value = !socketState.value;
-};
 
-const ownerMessages = computed(() => {
-	return allMessages.value.filter((message) => {
-		return message.ownerId == userId.value;
-	});
-});
-
-const partnerMessages = computed(() => {
-	return allMessages.value.filter((message) => {
-		return message.ownerId == partnerId.value;
-	});
-});
-
-const roomId = ref("NULL");
+const roomId = ref(null);
 const userId = useCookie("userId");
 const apiBase = useRuntimeConfig().public.apiBase;
+const allMessages: Ref<Message[]> = ref([]);
 
-const webRtcRoute = apiBase + SocketNamespaces.WEB_RTC;
-const textChatRoute = apiBase + SocketNamespaces.TEXT_CHAT;
-
-const webRtcSocket = io(webRtcRoute, {
+const socket = io(apiBase, {
 	withCredentials: true,
 });
-
-const textChatSocket = io(textChatRoute, { withCredentials: true });
 
 onMounted(async () => {
 	if (!userId.value) {
@@ -178,7 +152,7 @@ onMounted(async () => {
 		useAccountStore().setUserId(userId.value);
 	}
 	await rtcInit();
-	webRtcSocketInit();
+	socketInit();
 });
 
 let constraints = {
@@ -186,12 +160,10 @@ let constraints = {
 		width: { min: 640, ideal: 1920, max: 1920 },
 		height: { min: 480, ideal: 1080, max: 1080 },
 	},
-	audio: false,
+	audio: true,
 };
-
 const rtcInit = async () => {
 	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
-
 	localUser.value.srcObject = localStream.value;
 	peerConnection.value = new RTCPeerConnection(webRTC.servers);
 };
@@ -201,12 +173,15 @@ const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
 		const data: CandidateFoundReq = {
 			candidate: event.candidate,
 		};
-		webRtcSocket.emit(SocketEmits.EMIT_CANDIDATE, data);
+		socket.emit(SocketEmits.EMIT_CANDIDATE, data);
 	}
 };
 
+// not running when screenShare is addTrack
 const onTrack = (event: RTCTrackEvent) => {
+	console.log("track is added");
 	event.streams[0].getTracks().forEach((track) => {
+		console.log(track);
 		remoteStream.value.addTrack(track);
 	});
 };
@@ -224,8 +199,7 @@ const startConnection = async () => {
 	localStream.value.getTracks().forEach((track) => {
 		peerConnection.value.addTrack(track, localStream.value);
 	});
-
-	peerConnection.value.ontrack = onTrack;
+	peerConnection.value.addEventListener("track", onTrack);
 	peerConnection.value.onicecandidate = onIceCandidate;
 	peerConnection.value.oniceconnectionstatechange =
 		onIceConnectionStateChange;
@@ -239,7 +213,15 @@ const stopConnection = async () => {
 		onIceConnectionStateChange
 	);
 	socketState.value = false;
+	remoteStream.value.getTracks().forEach((track) => {
+		track.stop();
+	});
 	peerConnection.value.removeEventListener("icecandidate", onIceCandidate);
+	peerConnection.value.removeEventListener("track", onTrack);
+	peerConnection.value.removeEventListener(
+		"iceconnectionstatechange",
+		onIceConnectionStateChange
+	);
 	peerConnection.value.close();
 	// refresh new peerConnection
 	peerConnection.value = new RTCPeerConnection(webRTC.servers);
@@ -251,14 +233,13 @@ const endMeeting = () => {
 	remoteUser.value.srcObject = null;
 };
 
-const webRtcSocketInit = () => {
+const socketInit = () => {
 	const data: JoinRoomReq = {
 		userId: userId.value,
 	};
-	webRtcSocket.emit(SocketEmits.WAIT_FOR_ROOM, data);
-	webRtcSocket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
+	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
+	socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
 		startConnection();
-		textChatSocketInit();
 		roomId.value = data.roomId;
 		if (userId.value == data.host) {
 			partnerId.value = data.guest;
@@ -266,44 +247,51 @@ const webRtcSocketInit = () => {
 			console.log("creating offer");
 			createOffer();
 		} else {
+			loadAllMessages();
 			console.log("I am the guest");
 			partnerId.value = data.guest;
 		}
 	});
-	webRtcSocket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
+	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
 		console.log("Got ice candidate");
 		if (peerConnection.value) {
 			console.log("Adding ice candidate");
 			peerConnection.value.addIceCandidate(data.candidate);
 		}
 	});
-	webRtcSocket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
+	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
 		console.log("Accepting offer");
 		acceptOffer(data.offer);
 	});
-	webRtcSocket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
+	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		console.log("Accepting answer");
 		acceptAnswer(data.answer);
 	});
-	webRtcSocket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
+	socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
 		stopConnection();
+	});
+	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
+		console.log("Previous allMessage", allMessages.value);
+		allMessages.value.push(message);
+		console.log("Appended allMessage", allMessages.value);
 	});
 };
 
-const textChatSocketInit = async () => {
-	textChatSocket.emit(SocketEmits.GET_ALL_MESSAGES, {}, (response: any) => {
-		const messages: Message[] = response.message;
-		allMessages.value = messages;
-	});
-	textChatSocket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
-		console.log("Previous allMessage", allMessages);
-		console.log("Previous owner messages", ownerMessages);
-		console.log("Previous partner messages", partnerMessages);
-		allMessages.value.push(message);
-		console.log("Appended allMessage", allMessages);
-		console.log("New owner messages", ownerMessages);
-		console.log("New partner messages", partnerMessages);
-	});
+const loadAllMessages = async () => {
+	socket.emit(
+		SocketEmits.GET_ALL_MESSAGES,
+		{ emptyArg: "emptyArg" },
+		(response: any) => {
+			console.log(
+				"loadAllMessages - Got all messages",
+				response.messages
+			);
+			const messages: Message[] = response.messages;
+			if (messages) {
+				allMessages.value = messages;
+			}
+		}
+	);
 };
 
 const createOffer = async () => {
@@ -312,7 +300,7 @@ const createOffer = async () => {
 	const data: SendOfferReq = {
 		offer,
 	};
-	webRtcSocket.emit(SocketEmits.EMIT_OFFER, data);
+	socket.emit(SocketEmits.EMIT_OFFER, data);
 };
 
 const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
@@ -327,7 +315,7 @@ const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
 		answer,
 	};
 	console.log("emitting socket");
-	webRtcSocket.emit(SocketEmits.EMIT_ANSWER, data);
+	socket.emit(SocketEmits.EMIT_ANSWER, data);
 };
 
 const acceptAnswer = async (answer: RTCSessionDescriptionInit) => {

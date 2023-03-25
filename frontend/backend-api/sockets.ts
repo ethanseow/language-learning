@@ -8,6 +8,7 @@ export enum SocketEmits {
 	PARTNER_DISCONNECTED = "partnerDisconnected",
 	GET_ALL_MESSAGES = "getAllMessages",
 	SEND_MESSAGE = "sendMessage",
+	SHARE_SCREEN = "shareScreen",
 }
 export enum SocketNamespaces {
 	WEB_RTC = "/webRtc",

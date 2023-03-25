@@ -56,10 +56,19 @@ const decrementRoomUsers = (room: Room) => {
 	return newRoom;
 };
 
+const incrementRoomUsers = (room: Room) => {
+	const newRoom: Room = {
+		...room,
+		numInRoom: room.numInRoom + 1,
+	};
+	return newRoom;
+};
+
 export default {
 	decrementRoomUsers,
 	getRoomForUser,
 	isHost,
 	rotateHost,
 	userHasRoom,
+	incrementRoomUsers,
 };
