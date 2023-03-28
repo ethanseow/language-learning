@@ -18,7 +18,8 @@ export enum SocketNamespaces {
 
 export interface JoinRoomReq {
 	userId: string;
-	poolId: string;
+	offering: string;
+	seeking: string;
 }
 
 export type Message = {

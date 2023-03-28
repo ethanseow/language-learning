@@ -1,4 +1,5 @@
-import { type Message } from "./sockets";
+import { type Message, type SocketUser } from "./sockets";
+
 export type Room = {
 	id: string;
 	host: string;
@@ -6,3 +7,16 @@ export type Room = {
 	numInRoom: number;
 	messages: Message[];
 };
+
+export type UserPool = Record<string, SocketUser>;
+
+export type Pool = {
+	offering: Record<string, UserPool>;
+	seeking: Record<string, UserPool>;
+};
+
+export interface UserLookup {
+	roomId: string;
+	offering: string;
+	seeking: string;
+}

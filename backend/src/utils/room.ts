@@ -1,4 +1,4 @@
-import { type Room } from "../types";
+import { type Room, type UserLookup } from "../types";
 
 const userHasRoom = (userId, usersInRoom: Record<string, string>) => {
 	const roomId = usersInRoom[userId];
@@ -11,10 +11,10 @@ const userHasRoom = (userId, usersInRoom: Record<string, string>) => {
 
 const getRoomForUser = (
 	userId: string,
-	usersInRoom: Record<string, string>,
+	userLookup: Record<string, UserLookup>,
 	establishedRooms: Record<string, Room>
 ) => {
-	const roomId = usersInRoom[userId];
+	const roomId = userLookup[userId].roomId;
 	if (roomId == undefined) {
 		console.log("Missing Room Id for User", userId);
 		return null;
@@ -30,6 +30,19 @@ const getRoomForUser = (
 		return null;
 	}
 	return room;
+};
+
+const getLanguagesForUser = (
+	userId: string,
+	userLookup: Record<string, UserLookup>
+) => {
+	if (!userLookup[userId]) {
+		return null;
+	}
+	return {
+		offering: userLookup[userId].offering,
+		seeking: userLookup[userId].seeking,
+	};
 };
 
 const isHost = (userId, room: Room) => {
@@ -71,4 +84,5 @@ export default {
 	rotateHost,
 	userHasRoom,
 	incrementRoomUsers,
+	getLanguagesForUser,
 };

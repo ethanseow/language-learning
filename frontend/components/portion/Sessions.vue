@@ -62,16 +62,12 @@
 				<td v-if="!usePastSession" class="flex flex-row justify-center">
 					<NuxtLink
 						v-if="true || allowMeetingRoom(session.appointmentDate)"
-						:to="{
-							name: urlConsts.MEETING,
-							params: {
-								poolId: session.appointmentDate.toDateString(),
-							},
-						}"
+						:to="`${urlConsts.MEETING}?offering=${session.languageOffering}&seeking=${session.languageSeeking}`"
 						class="bg-green-400 text-white border-white border-[2px] py-1 px-6 rounded-md font-bold"
 					>
 						Join Meeting!
 					</NuxtLink>
+
 					<div
 						v-else
 						class="bg-red-400 text-white border-white border-[2px] py-1 px-4 rounded-md font-bold w-max"

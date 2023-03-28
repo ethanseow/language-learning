@@ -5,9 +5,7 @@
 			Your UserID:
 			{{ userId ? userId : "UNKNOWN USERID" }}
 		</div>
-		<div class="p-4 bg-purple-600 w-max">
-			<NuxtLink to="/meeting"> Find Room </NuxtLink>
-		</div>
+		<div class="p-4 bg-purple-600 w-max"></div>
 	</div>
 </template>
 
