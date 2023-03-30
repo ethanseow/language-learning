@@ -158,8 +158,10 @@ onMounted(async () => {
 			String(Math.round(Math.random() * 10000));
 		useAccountStore().setUserId(userId.value);
 	}
-	await rtcInit();
-	socketInit();
+	if (route.query.seeking && route.query.offering) {
+		await rtcInit();
+		socketInit();
+	}
 });
 
 let constraints = {

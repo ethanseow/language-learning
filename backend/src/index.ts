@@ -12,7 +12,7 @@ import {
 	SocketNamespaces,
 	type Message,
 } from "./sockets";
-import { type Room, type Pool, type UserLookup } from "./types";
+import { type Room, type Pool, type UserLookup, UserPool } from "./types";
 import utils from "./utils/room";
 import { Server, Socket } from "socket.io";
 import consts from "./consts";
@@ -23,19 +23,20 @@ const app = express();
 const port = 4000;
 const http = require("http");
 const server = http.createServer(app);
+
 const sessionMiddleware = session({
-	secret: "changeit",
+	secret: "changed",
 	resave: false,
-	saveUninitialized: false,
+	saveUninitialized: true,
 });
 
-app.use(sessionMiddleware);
+app.use(bodyParser.json());
+//app.use(sessionMiddleware);
 app.use(
 	cors({
 		origin: "*",
 	})
 );
-app.use(bodyParser.json());
 
 let establishedRooms: Record<string, Room> = {};
 let usersInRoom: Record<string, string> = {};
@@ -50,7 +51,6 @@ let pool: Pool = {
 declare module "express-session" {
 	interface Session {
 		userId: string;
-		room: string | null;
 	}
 }
 
@@ -137,15 +137,22 @@ io.on("connection", (socket) => {
 			establishedRooms[room.id] = utils.incrementRoomUsers(room);
 			io.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
-			const userPool = pool.offering[data.offering];
-			if (userPool && Object.keys(userPool).length >= 1) {
-				console.log("Room is available, sending them to room");
+			const userPool = pool.offering[data.seeking];
+			const offeringPool = pool.offering[data.seeking];
+			const seekingPool = pool.seeking[data.offering];
+			const candidates: (keyof UserPool)[] = [];
+			Object.keys(offeringPool).forEach((user: keyof UserPool) => {
+				if (seekingPool.hasOwnProperty(user)) {
+					candidates.push(user);
+				}
+			});
+			if (candidates) {
 				let randomRoomId =
 					String(Math.round(Math.random() * 1000000)) +
 					"_" +
 					String(Math.round(Math.random() * 1000000));
-				let randomIndex = _.sample(Object.keys(userPool));
-				let randomUser = userPool[randomIndex];
+				let randomIndex = _.sample(Object.keys(candidates));
+				let randomUser = offeringPool[candidates[randomIndex]];
 				if (randomUser.socketId == socket.id) {
 					return;
 				}
@@ -165,7 +172,8 @@ io.on("connection", (socket) => {
 					return;
 				}
 				let waitingSocket = s[0];
-				delete userPool[randomUser.userId];
+				delete offeringPool[randomUser.userId];
+				delete seekingPool[randomUser.userId];
 				socket.join(randomRoomId);
 				waitingSocket.join(randomRoomId);
 				const data: JoinedRoomReq = {
@@ -182,6 +190,8 @@ io.on("connection", (socket) => {
 				};
 				pool.offering[data.offering][data.userId] = user;
 				pool.offering[data.seeking][data.userId] = user;
+				reverseUserLookup[userId].offering = data.offering;
+				reverseUserLookup[userId].seeking = data.seeking;
 			}
 		}
 	});
@@ -262,6 +272,9 @@ io.on("connection", (socket) => {
 				userId,
 				reverseUserLookup
 			);
+			if (!languages) {
+				return;
+			}
 			const seeking = languages.seeking;
 			const offering = languages.offering;
 			const offeringPool = pool.offering[offering];
@@ -297,6 +310,7 @@ io.on("connection", (socket) => {
 			delete usersInRoom[updatedRoom.host];
 			delete usersInRoom[updatedRoom.guest];
 			delete establishedRooms[room.id];
+			delete reverseUserLookup[userId];
 			console.log("updated usersInRoom", usersInRoom);
 			console.log("updated establishedRooms", establishedRooms);
 			return;
