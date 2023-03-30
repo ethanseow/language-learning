@@ -18,7 +18,8 @@ import { Server, Socket } from "socket.io";
 import consts from "./consts";
 import * as _ from "lodash";
 import { SocketEmits } from "./sockets";
-import session, { Store } from "express-session";
+import session, { Session, SessionOptions, Store } from "express-session";
+import type { IncomingHttpHeaders, IncomingMessage } from "http";
 const app = express();
 const port = 4000;
 const http = require("http");
@@ -31,7 +32,7 @@ const sessionMiddleware = session({
 });
 
 app.use(bodyParser.json());
-//app.use(sessionMiddleware);
+app.use(sessionMiddleware);
 app.use(
 	cors({
 		origin: "*",
@@ -39,8 +40,6 @@ app.use(
 );
 
 let establishedRooms: Record<string, Room> = {};
-let usersInRoom: Record<string, string> = {};
-
 let reverseUserLookup: Record<string, UserLookup> = {};
 
 let pool: Pool = {
@@ -121,7 +120,7 @@ io.on("connection", (socket) => {
 			req.session.save();
 		}
 		console.log("User joined", userId);
-		if (utils.userHasRoom(userId, usersInRoom)) {
+		if (utils.userHasRoom(userId, reverseUserLookup)) {
 			console.log("Joining Existing Room");
 			const room = utils.getRoomForUser(
 				userId,
@@ -137,21 +136,25 @@ io.on("connection", (socket) => {
 			establishedRooms[room.id] = utils.incrementRoomUsers(room);
 			io.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
-			const userPool = pool.offering[data.seeking];
 			const offeringPool = pool.offering[data.seeking];
 			const seekingPool = pool.seeking[data.offering];
 			const candidates: (keyof UserPool)[] = [];
-			Object.keys(offeringPool).forEach((user: keyof UserPool) => {
-				if (seekingPool.hasOwnProperty(user)) {
-					candidates.push(user);
-				}
-			});
-			if (candidates) {
+			if (offeringPool && seekingPool) {
+				Object.keys(offeringPool).forEach((user: keyof UserPool) => {
+					if (seekingPool.hasOwnProperty(user)) {
+						candidates.push(user);
+					}
+				});
+			}
+			if (candidates.length > 0) {
 				let randomRoomId =
 					String(Math.round(Math.random() * 1000000)) +
 					"_" +
 					String(Math.round(Math.random() * 1000000));
 				let randomIndex = _.sample(Object.keys(candidates));
+				console.log(randomIndex);
+				console.log(offeringPool);
+				console.log(candidates);
 				let randomUser = offeringPool[candidates[randomIndex]];
 				if (randomUser.socketId == socket.id) {
 					return;
@@ -164,8 +167,8 @@ io.on("connection", (socket) => {
 					messages: [],
 				};
 				establishedRooms[randomRoomId] = room;
-				usersInRoom[userId] = randomRoomId;
-				usersInRoom[randomUser.userId] = randomRoomId;
+				reverseUserLookup[userId].roomId = randomRoomId;
+				reverseUserLookup[randomUser.userId].roomId = randomRoomId;
 				console.log("Other in-pool user", randomUser);
 				let s = await io.in(randomUser.socketId).fetchSockets();
 				if (s.length == 0) {
@@ -188,10 +191,13 @@ io.on("connection", (socket) => {
 					userId,
 					socketId: socket.id,
 				};
-				pool.offering[data.offering][data.userId] = user;
-				pool.offering[data.seeking][data.userId] = user;
-				reverseUserLookup[userId].offering = data.offering;
-				reverseUserLookup[userId].seeking = data.seeking;
+				pool.offering[data.offering] = { [userId]: user };
+				pool.seeking[data.seeking] = { [userId]: user };
+				reverseUserLookup[userId] = {
+					offering: data.offering,
+					seeking: data.seeking,
+					roomId: null,
+				};
 			}
 		}
 	});
@@ -199,39 +205,52 @@ io.on("connection", (socket) => {
 	socket.on(SocketEmits.EMIT_ANSWER, (data: SendAnswerReq) => {
 		console.log("got answer");
 		const userId = req.session.userId;
-		if (!usersInRoom.hasOwnProperty(userId)) {
-			console.log(usersInRoom);
+		if (!reverseUserLookup.hasOwnProperty(userId)) {
+			console.log(reverseUserLookup);
 			console.log(userId);
 			return;
 		}
-		const room = usersInRoom[userId];
-		socket.broadcast.to(room).emit(SocketEmits.EMIT_ANSWER, data);
+
+		const room = utils.getRoomForUser(
+			userId,
+			reverseUserLookup,
+			establishedRooms
+		);
+		socket.broadcast.to(room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
 		console.log("got candidate");
 		const userId = req.session.userId;
-		if (!usersInRoom.hasOwnProperty(userId)) {
-			console.log(usersInRoom);
+		if (!reverseUserLookup.hasOwnProperty(userId)) {
+			console.log(reverseUserLookup);
 			console.log(userId);
 			return;
 		}
-		const room = usersInRoom[userId];
-		socket.broadcast.to(room).emit(SocketEmits.EMIT_CANDIDATE, data);
+		const room = utils.getRoomForUser(
+			userId,
+			reverseUserLookup,
+			establishedRooms
+		);
+		socket.broadcast.to(room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
 	});
 	socket.on(SocketEmits.EMIT_OFFER, (data: SendOfferReq) => {
 		const userId = req.session.userId;
-		if (!usersInRoom.hasOwnProperty(userId)) {
-			console.log(usersInRoom);
+		if (!reverseUserLookup.hasOwnProperty(userId)) {
+			console.log(reverseUserLookup);
 			console.log(userId);
 			return;
 		}
-		const room = usersInRoom[userId];
 		console.log("Recevied offer from", socket.id);
-		socket.broadcast.to(room).emit(SocketEmits.EMIT_OFFER, data);
+		const room = utils.getRoomForUser(
+			userId,
+			reverseUserLookup,
+			establishedRooms
+		);
+		socket.broadcast.to(room.id).emit(SocketEmits.EMIT_OFFER, data);
 	});
 	socket.on(SocketEmits.GET_ALL_MESSAGES, (emptyArg, callback) => {
 		const userId = req.session.userId;
-		if (!utils.userHasRoom(userId, usersInRoom)) {
+		if (!utils.userHasRoom(userId, reverseUserLookup)) {
 			console.log(
 				"Sending Message - user",
 				userId,
@@ -248,7 +267,7 @@ io.on("connection", (socket) => {
 	});
 	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
 		const userId = req.session.userId;
-		if (!utils.userHasRoom(userId, usersInRoom)) {
+		if (!utils.userHasRoom(userId, reverseUserLookup)) {
 			console.log(
 				"Sending Message - user",
 				userId,
@@ -267,11 +286,12 @@ io.on("connection", (socket) => {
 	socket.on("disconnecting", () => {
 		console.log("disconnecting");
 		const userId = req.session.userId;
-		if (!utils.userHasRoom(userId, usersInRoom)) {
+		if (!utils.userHasRoom(userId, reverseUserLookup)) {
 			const languages = utils.getLanguagesForUser(
 				userId,
 				reverseUserLookup
 			);
+			// this guy never existed in our reverseUserLookup
 			if (!languages) {
 				return;
 			}
@@ -289,6 +309,7 @@ io.on("connection", (socket) => {
 			);
 			delete offeringPool[userId];
 			delete seekingPool[userId];
+			delete reverseUserLookup[userId];
 			console.log("updated offering pool", offeringPool);
 			console.log("updated seeking pool", seekingPool);
 			return;
@@ -307,11 +328,11 @@ io.on("connection", (socket) => {
 		}
 		if (updatedRoom.numInRoom <= 0) {
 			console.log("no users left in the room", updatedRoom);
-			delete usersInRoom[updatedRoom.host];
-			delete usersInRoom[updatedRoom.guest];
+
+			delete reverseUserLookup[updatedRoom.guest];
 			delete establishedRooms[room.id];
 			delete reverseUserLookup[userId];
-			console.log("updated usersInRoom", usersInRoom);
+			console.log("updated reverseUserLookup", reverseUserLookup);
 			console.log("updated establishedRooms", establishedRooms);
 			return;
 		}

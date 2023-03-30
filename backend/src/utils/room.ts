@@ -1,7 +1,7 @@
 import { type Room, type UserLookup } from "../types";
 
-const userHasRoom = (userId, usersInRoom: Record<string, string>) => {
-	const roomId = usersInRoom[userId];
+const userHasRoom = (userId, userLookup: Record<string, UserLookup>) => {
+	const roomId = userLookup[userId]?.roomId;
 	if (roomId == undefined) {
 		console.log("Missing Room Id for User", userId);
 		return false;
