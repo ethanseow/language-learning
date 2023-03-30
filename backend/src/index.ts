@@ -167,7 +167,11 @@ io.on("connection", (socket) => {
 					messages: [],
 				};
 				establishedRooms[randomRoomId] = room;
-				reverseUserLookup[userId].roomId = randomRoomId;
+				reverseUserLookup[userId] = {
+					offering: data.offering,
+					seeking: data.seeking,
+					roomId: randomRoomId,
+				};
 				reverseUserLookup[randomUser.userId].roomId = randomRoomId;
 				console.log("Other in-pool user", randomUser);
 				let s = await io.in(randomUser.socketId).fetchSockets();
@@ -179,20 +183,26 @@ io.on("connection", (socket) => {
 				delete seekingPool[randomUser.userId];
 				socket.join(randomRoomId);
 				waitingSocket.join(randomRoomId);
-				const data: JoinedRoomReq = {
+				const sioData: JoinedRoomReq = {
 					roomId: randomRoomId,
 					host: room.host,
 					guest: room.guest,
 				};
-				io.to(randomRoomId).emit(SocketEmits.JOIN_ROOM, data);
+				io.to(randomRoomId).emit(SocketEmits.JOIN_ROOM, sioData);
 			} else {
 				console.log("Room is unavailable, putting in pool");
 				const user: SocketUser = {
 					userId,
 					socketId: socket.id,
 				};
-				pool.offering[data.offering] = { [userId]: user };
-				pool.seeking[data.seeking] = { [userId]: user };
+				pool.offering[data.offering] = {
+					...pool.offering[data.offering],
+					[userId]: user,
+				};
+				pool.seeking[data.seeking] = {
+					...pool.seeking[data.seeking],
+					[userId]: user,
+				};
 				reverseUserLookup[userId] = {
 					offering: data.offering,
 					seeking: data.seeking,
