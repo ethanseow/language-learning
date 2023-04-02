@@ -244,7 +244,7 @@ const endMeeting = () => {
 
 const socketInit = () => {
 	const data: JoinRoomReq = {
-		userId: userId.value,
+		userId: route.query.userId,
 		offering: route.query.offering,
 		seeking: route.query.seeking,
 	};

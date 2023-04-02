@@ -146,6 +146,8 @@ io.on("connection", (socket) => {
 					}
 				});
 			}
+			console.log(offeringPool);
+			console.log(seekingPool);
 			if (candidates.length > 0) {
 				let randomRoomId =
 					String(Math.round(Math.random() * 1000000)) +
@@ -203,6 +205,11 @@ io.on("connection", (socket) => {
 					...pool.seeking[data.seeking],
 					[userId]: user,
 				};
+				console.log(pool.offering);
+				console.log(
+					pool.seeking,
+					"seeking pool after user is added to pool"
+				);
 				reverseUserLookup[userId] = {
 					offering: data.offering,
 					seeking: data.seeking,
@@ -277,6 +284,7 @@ io.on("connection", (socket) => {
 	});
 	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
 		const userId = req.session.userId;
+		console.log(userId, "user id from session");
 		if (!utils.userHasRoom(userId, reverseUserLookup)) {
 			console.log(
 				"Sending Message - user",
