@@ -136,28 +136,13 @@ io.on("connection", (socket) => {
 			establishedRooms[room.id] = utils.incrementRoomUsers(room);
 			io.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
-			const offeringPool = pool.offering[data.seeking];
-			const seekingPool = pool.seeking[data.offering];
-			const candidates: (keyof UserPool)[] = [];
-			if (offeringPool && seekingPool) {
-				Object.keys(offeringPool).forEach((user: keyof UserPool) => {
-					if (seekingPool.hasOwnProperty(user)) {
-						candidates.push(user);
-					}
-				});
-			}
-			console.log(offeringPool);
-			console.log(seekingPool);
-			if (candidates.length > 0) {
+			const candidates = utils.findLanguageCandidates(pool, data);
+			if (candidates) {
 				let randomRoomId =
 					String(Math.round(Math.random() * 1000000)) +
 					"_" +
 					String(Math.round(Math.random() * 1000000));
-				let randomIndex = _.sample(Object.keys(candidates));
-				console.log(randomIndex);
-				console.log(offeringPool);
-				console.log(candidates);
-				let randomUser = offeringPool[candidates[randomIndex]];
+				const randomUser = utils.getRandomCandidate(candidates);
 				if (randomUser.socketId == socket.id) {
 					return;
 				}
@@ -168,12 +153,20 @@ io.on("connection", (socket) => {
 					numInRoom: 2,
 					messages: [],
 				};
-				establishedRooms[randomRoomId] = room;
-				reverseUserLookup[userId] = {
-					offering: data.offering,
-					seeking: data.seeking,
-					roomId: randomRoomId,
-				};
+				establishedRooms = utils.addToRoom(
+					establishedRooms,
+					randomRoomId,
+					room
+				);
+				reverseUserLookup = utils.addToLookUp(
+					reverseUserLookup,
+					userId,
+					{
+						offering: data.offering,
+						seeking: data.seeking,
+						roomId: randomRoomId,
+					}
+				);
 				reverseUserLookup[randomUser.userId].roomId = randomRoomId;
 				console.log("Other in-pool user", randomUser);
 				let s = await io.in(randomUser.socketId).fetchSockets();
@@ -181,8 +174,11 @@ io.on("connection", (socket) => {
 					return;
 				}
 				let waitingSocket = s[0];
-				delete offeringPool[randomUser.userId];
-				delete seekingPool[randomUser.userId];
+				pool = utils.removeFromPool(
+					pool,
+					reverseUserLookup,
+					randomUser.userId
+				);
 				socket.join(randomRoomId);
 				waitingSocket.join(randomRoomId);
 				const sioData: JoinedRoomReq = {
@@ -197,24 +193,22 @@ io.on("connection", (socket) => {
 					userId,
 					socketId: socket.id,
 				};
-				pool.offering[data.offering] = {
-					...pool.offering[data.offering],
-					[userId]: user,
-				};
-				pool.seeking[data.seeking] = {
-					...pool.seeking[data.seeking],
-					[userId]: user,
-				};
+
+				pool = utils.addToPool(pool, data.offering, data.seeking, user);
 				console.log(pool.offering);
 				console.log(
 					pool.seeking,
 					"seeking pool after user is added to pool"
 				);
-				reverseUserLookup[userId] = {
-					offering: data.offering,
-					seeking: data.seeking,
-					roomId: null,
-				};
+				reverseUserLookup = utils.addToLookUp(
+					reverseUserLookup,
+					userId,
+					{
+						offering: data.offering,
+						seeking: data.seeking,
+						roomId: null,
+					}
+				);
 			}
 		}
 	});
@@ -325,9 +319,11 @@ io.on("connection", (socket) => {
 				"user not in any room, removing from seeking pool",
 				seekingPool
 			);
-			delete offeringPool[userId];
-			delete seekingPool[userId];
-			delete reverseUserLookup[userId];
+			pool = utils.removeFromPool(pool, reverseUserLookup, userId);
+			reverseUserLookup = utils.removeFromLookup(
+				reverseUserLookup,
+				userId
+			);
 			console.log("updated offering pool", offeringPool);
 			console.log("updated seeking pool", seekingPool);
 			return;
@@ -346,10 +342,22 @@ io.on("connection", (socket) => {
 		}
 		if (updatedRoom.numInRoom <= 0) {
 			console.log("no users left in the room", updatedRoom);
-
-			delete reverseUserLookup[updatedRoom.guest];
-			delete establishedRooms[room.id];
-			delete reverseUserLookup[userId];
+			establishedRooms = utils.removeFromRoom(
+				establishedRooms,
+				updatedRoom.guest
+			);
+			establishedRooms = utils.removeFromRoom(
+				establishedRooms,
+				updatedRoom.host
+			);
+			reverseUserLookup = utils.removeFromLookup(
+				reverseUserLookup,
+				updatedRoom.guest
+			);
+			reverseUserLookup = utils.removeFromLookup(
+				reverseUserLookup,
+				updatedRoom.host
+			);
 			console.log("updated reverseUserLookup", reverseUserLookup);
 			console.log("updated establishedRooms", establishedRooms);
 			return;

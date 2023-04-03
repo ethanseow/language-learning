@@ -159,7 +159,7 @@ onMounted(async () => {
 		useAccountStore().setUserId(userId.value);
 	}
 	if (route.query.seeking && route.query.offering) {
-		await rtcInit();
+		// await rtcInit();
 		socketInit();
 	}
 });
@@ -203,6 +203,9 @@ const onIceConnectionStateChange = (event: any) => {
 };
 
 const startConnection = async () => {
+	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
+	localUser.value.srcObject = localStream.value;
+	peerConnection.value = new RTCPeerConnection(webRTC.servers);
 	remoteStream.value = new MediaStream();
 	remoteUser.value.srcObject = remoteStream.value;
 	localStream.value.getTracks().forEach((track) => {

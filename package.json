@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "description": "## A project that helps those who want to do mandarin/english language exchange",
   "main": "index.js",
-  "dependencies": {
-    "socket.io-client": "^4.6.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "cypress": "^12.9.0",
+    "socket.io-client": "^4.6.1",
     "typescript": "^5.0.3"
   },
   "scripts": {

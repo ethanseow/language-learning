@@ -7,7 +7,7 @@
 			"path": "frontend"
 		},
 		{
-			"path": "."
+			"path": "cypress-tests"
 		}
 	],
 	"settings": {}
