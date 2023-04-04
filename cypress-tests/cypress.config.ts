@@ -1,7 +1,7 @@
 import { defineConfig } from "cypress";
 import { io } from "socket.io-client";
 import { SocketEmits } from "../frontend/backend-api/sockets";
-
+import * as wrtc from "wrtc";
 import {
 	type JoinRoomReq,
 	type JoinedRoomReq,
@@ -13,12 +13,30 @@ import {
 	SocketNamespaces,
 } from "../frontend/backend-api/sockets";
 import consts from "./consts";
+import test from "./test";
+const servers = {
+	iceServers: [
+		{
+			urls: [
+				"stun:stun1.l.google.com:19302",
+				//"stun:stun2.l.google.com:19302",
+			],
+		},
+	],
+};
+// import { RTCMocker } from "./RTCMocker";
 export default defineConfig({
 	e2e: {
 		setupNodeEvents(on, config) {
+			// let mocker = new RTCMocker();
 			let socket = io(consts.SOCKET_API_BASE, {
 				withCredentials: true,
 			});
+			let peerConnection: RTCPeerConnection = new wrtc.RTCPeerConnection(
+				servers
+			);
+
+			socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {});
 			/*
 			socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
 				startConnection();
@@ -59,6 +77,9 @@ export default defineConfig({
 			});
             */
 			on("task", {
+				checkPeerConnection() {
+					return "" + peerConnection.connectionState;
+				},
 				connectToPeer() {
 					const data = {
 						userId: "" + Math.random() * 100000,
@@ -67,6 +88,13 @@ export default defineConfig({
 					};
 					socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 					return null;
+				},
+				changeData(data) {
+					test.setDataToBeRead(data);
+					return null;
+				},
+				readData() {
+					return test.readDataToBeRead();
 				},
 			});
 		},
