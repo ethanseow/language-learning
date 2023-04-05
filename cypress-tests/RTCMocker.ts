@@ -25,49 +25,89 @@ const servers = {
 };
 export class RTCMocker {
 	socket: Socket;
+	peerConnection: RTCPeerConnection;
+	userId: string;
+	offering: string;
+	seeking: string;
+	partnerId: string | null;
 	constructor() {
+		this.userId = "" + Math.random() * 100000;
+		this.offering = consts.LANGUAGE_OFFERING;
+		this.seeking = consts.LANGUAGE_SEEKING;
 		this.socket = io(consts.SOCKET_API_BASE, {
 			withCredentials: true,
 		});
+		this.partnerId = null;
+		this.peerConnection = new wrtc.RTCPeerConnection(servers);
+
+		this.peerConnection.onicecandidate = (
+			event: RTCPeerConnectionIceEvent
+		) => {
+			if (event.candidate) {
+				const data: CandidateFoundReq = {
+					candidate: event.candidate,
+				};
+				this.socket.emit(SocketEmits.EMIT_CANDIDATE, data);
+			}
+		};
 		this.socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
-			startConnection();
-			roomId.value = data.roomId;
-			if (userId.value == data.host) {
-				partnerId.value = data.guest;
-				console.log("I am the host");
-				console.log("creating offer");
-				createOffer();
+			if (this.userId == data.host) {
+				this.partnerId = data.guest;
+				this.createOffer();
 			} else {
-				loadAllMessages();
-				console.log("I am the guest");
-				partnerId.value = data.guest;
+				// this.loadAllMessages();
+				this.partnerId = data.guest;
 			}
 		});
 		this.socket.on(
 			SocketEmits.EMIT_CANDIDATE,
 			(data: CandidateFoundReq) => {
 				console.log("Got ice candidate");
-				if (peerConnection.value) {
+				if (this.peerConnection) {
 					console.log("Adding ice candidate");
-					peerConnection.value.addIceCandidate(data.candidate);
+					this.peerConnection.addIceCandidate(data.candidate);
 				}
 			}
 		);
 		this.socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
 			console.log("Accepting offer");
-			acceptOffer(data.offer);
+			this.acceptOffer(data.offer);
 		});
 		this.socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 			console.log("Accepting answer");
-			acceptAnswer(data.answer);
+			this.acceptAnswer(data.answer);
 		});
-		this.socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
-			stopConnection();
-		});
-		this.socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
-			console.log("Previous allMessage", allMessages.value);
-			allMessages.value.push(message);
-			console.log("Appended allMessage", allMessages.value);
-		});
+	}
+	private async createOffer() {
+		let offer = await this.peerConnection.createOffer();
+		await this.peerConnection.setLocalDescription(offer);
+		const data: SendOfferReq = {
+			offer,
+		};
+		this.socket.emit(SocketEmits.EMIT_OFFER, data);
+	}
+	private async acceptOffer(offer: RTCSessionDescriptionInit) {
+		await this.peerConnection.setRemoteDescription(offer);
+
+		let answer = await this.peerConnection.createAnswer();
+		await this.peerConnection.setLocalDescription(answer);
+
+		let data: SendAnswerReq = {
+			answer,
+		};
+		this.socket.emit(SocketEmits.EMIT_ANSWER, data);
+	}
+	private async acceptAnswer(answer: RTCSessionDescriptionInit) {
+		if (!this.peerConnection.currentRemoteDescription) {
+			this.peerConnection.setRemoteDescription(answer);
+		}
+	}
+	waitForRoom() {
+		const data: JoinRoomReq = {
+			userId: this.userId,
+			offering: this.seeking,
+			seeking: this.offering,
+		};
+		this.socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 	}
 }

@@ -24,19 +24,11 @@ const servers = {
 		},
 	],
 };
-// import { RTCMocker } from "./RTCMocker";
+import { RTCMocker } from "./RTCMocker";
 export default defineConfig({
 	e2e: {
 		setupNodeEvents(on, config) {
-			// let mocker = new RTCMocker();
-			let socket = io(consts.SOCKET_API_BASE, {
-				withCredentials: true,
-			});
-			let peerConnection: RTCPeerConnection = new wrtc.RTCPeerConnection(
-				servers
-			);
-
-			socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {});
+			let mocker = new RTCMocker();
 			/*
 			socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
 				startConnection();
@@ -77,17 +69,16 @@ export default defineConfig({
 			});
             */
 			on("task", {
+				connectToPeer() {
+					mocker.waitForRoom();
+					return null;
+				},
+				checkConnectionStatus() {
+					return mocker.peerConnection.iceConnectionState;
+				},
+				/*
 				checkPeerConnection() {
 					return "" + peerConnection.connectionState;
-				},
-				connectToPeer() {
-					const data = {
-						userId: "" + Math.random() * 100000,
-						offering: consts.LANGUAGE_OFFERING,
-						seeking: consts.LANGUAGE_SEEKING,
-					};
-					socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
-					return null;
 				},
 				changeData(data) {
 					test.setDataToBeRead(data);
@@ -96,6 +87,7 @@ export default defineConfig({
 				readData() {
 					return test.readDataToBeRead();
 				},
+                */
 			});
 		},
 	},
