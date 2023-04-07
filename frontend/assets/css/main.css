@@ -5,7 +5,7 @@
 
 @layer base {
 	html {
-		@apply text-primary font-inter;
+		@apply text-primary font-inter bg-backgroundSecondary;
 	}
 	.default-bg {
 		@apply bg-background;

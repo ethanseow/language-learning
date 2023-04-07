@@ -4,7 +4,14 @@ export default defineNuxtConfig({
 	css: ["~/assets/css/main.css"],
 	runtimeConfig: {
 		public: {
-			apiBase: process.env.API_BASE || "incorrect api base",
+			apiKey: "",
+			authDomain: "",
+			projectId: "",
+			storageBucket: "",
+			messagingSenderId: "",
+			appId: "",
+			measurementId: "",
+			apiBase: "",
 		},
 	},
 	postcss: {
@@ -14,7 +21,7 @@ export default defineNuxtConfig({
 		},
 	},
 	imports: {
-		dirs: ["stores", "assets/logos", "constants", "utils"],
+		dirs: ["stores", "assets/logos", "constants", "utils", "composables"],
 	},
 	modules: [
 		// ...

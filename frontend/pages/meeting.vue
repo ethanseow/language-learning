@@ -205,7 +205,9 @@ const onIceConnectionStateChange = (event: any) => {
 const startConnection = async () => {
 	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
 	localUser.value.srcObject = localStream.value;
+	console.log("before my peerconnection", peerConnection.value);
 	peerConnection.value = new RTCPeerConnection(webRTC.servers);
+	console.log("after my peerconnection", peerConnection.value);
 	remoteStream.value = new MediaStream();
 	remoteUser.value.srcObject = remoteStream.value;
 	localStream.value.getTracks().forEach((track) => {
@@ -253,7 +255,7 @@ const socketInit = () => {
 	};
 	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 	socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
-		startConnection();
+		await startConnection();
 		roomId.value = data.roomId;
 		if (userId.value == data.host) {
 			partnerId.value = data.guest;
@@ -265,29 +267,29 @@ const socketInit = () => {
 			console.log("I am the guest");
 			partnerId.value = data.guest;
 		}
-	});
-	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
-		console.log("Got ice candidate");
-		if (peerConnection.value) {
-			console.log("Adding ice candidate");
-			peerConnection.value.addIceCandidate(data.candidate);
-		}
-	});
-	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
-		console.log("Accepting offer");
-		acceptOffer(data.offer);
-	});
-	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
-		console.log("Accepting answer");
-		acceptAnswer(data.answer);
-	});
-	socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
-		stopConnection();
-	});
-	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
-		console.log("Previous allMessage", allMessages.value);
-		allMessages.value.push(message);
-		console.log("Appended allMessage", allMessages.value);
+		socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
+			console.log("Got ice candidate");
+			if (peerConnection.value) {
+				console.log("Adding ice candidate");
+				peerConnection.value.addIceCandidate(data.candidate);
+			}
+		});
+		socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
+			console.log("Accepting offer");
+			acceptOffer(data.offer);
+		});
+		socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
+			console.log("Accepting answer");
+			acceptAnswer(data.answer);
+		});
+		socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
+			stopConnection();
+		});
+		socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
+			console.log("Previous allMessage", allMessages.value);
+			allMessages.value.push(message);
+			console.log("Appended allMessage", allMessages.value);
+		});
 	});
 };
 
@@ -318,7 +320,9 @@ const createOffer = async () => {
 };
 
 const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
+	console.log("");
 	console.log("at accept offer function");
+	console.log("my peerconnection", peerConnection.value);
 	await peerConnection.value.setRemoteDescription(offer);
 
 	let answer = await peerConnection.value.createAnswer();
