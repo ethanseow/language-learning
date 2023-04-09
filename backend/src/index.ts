@@ -20,6 +20,8 @@ import * as _ from "lodash";
 import { SocketEmits } from "./sockets";
 import session, { Session, SessionOptions, Store } from "express-session";
 import type { IncomingHttpHeaders, IncomingMessage } from "http";
+import { app as firebaseApp, analytics } from "@/firebase";
+
 const app = express();
 const port = 4000;
 const http = require("http");

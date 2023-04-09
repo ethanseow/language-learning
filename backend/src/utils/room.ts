@@ -154,6 +154,7 @@ const addToPool = (
 		...seeking,
 		[user.userId]: user,
 	};
+	console.log(tempPool);
 	return tempPool;
 };
 

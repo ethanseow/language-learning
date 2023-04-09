@@ -1,6 +1,6 @@
 <template>
-	<div class="w-screen h-screen default-bg flex flex-col px-20">
-		<Header />
+	<Header class="bg-" />
+	<div class="w-full h-screen bg-background flex flex-col px-20">
 		<FindPracticePortion class="self-center" />
 		<Sessions :use-past-session="false" />
 		<Sessions use-past-session />
