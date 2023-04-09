@@ -14,6 +14,7 @@
 			<div class="font-bold text-4xl">Hello!</div>
 			<div>Use your email or another service to continue with Linkg</div>
 			<div
+				@click="googleAuth.signInWithGoogle"
 				class="w-full flex flex-row items-center gap-2 px-4 py-2 bg-gray-400 rounded-md"
 			>
 				<GoogleIcon class="w-[40px]" />
@@ -28,6 +29,15 @@
 			<div class="w-full px-4 py-2 bg-blue-400 rounded-md font-semibold">
 				Continue with email
 			</div>
+			<div
+				v-if="signInSuccess.status"
+				class="text-green-500 font-semibold"
+			>
+				{{ signInSuccess.message }}
+			</div>
+			<div v-if="signInError.status">
+				{{ signInError.message }}
+			</div>
 		</div>
 	</div>
 </template>
@@ -36,6 +46,32 @@
 const { toggleModal } = defineProps<{
 	toggleModal: Function;
 }>();
+const onSuccess = ref();
+const signInSuccess = ref({
+	status: false,
+	message: "Success",
+});
+const signInError = ref({
+	status: false,
+	message: "Error Signing In - Please Try Again",
+});
+const googleAuth = useGoogleAuth();
+watch(googleAuth.error, (error) => {
+	signInError.value.status = true;
+});
+
+watch(googleAuth.user, (user) => {
+	signInSuccess.value.status = true;
+	onSuccess.value = setTimeout(() => {
+		toggleModal();
+	}, 3000);
+});
+
+onUnmounted(() => {
+	if (onSuccess.value) {
+		clearInterval(onSuccess.value);
+	}
+});
 
 const GoogleIcon = resolveComponent("GoogleIcon");
 const AppleIcon = resolveComponent("AppleIcon");

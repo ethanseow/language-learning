@@ -17,6 +17,21 @@ const tempCalendarFlowProps = {
 	languageSeeking: Languages.Mandarin,
 };
 
+export const useLoginModalUIStore = defineStore("loginModalUIStore", () => {
+	const canShowModal = ref(false);
+	const closeModal = () => {
+		canShowModal.value = false;
+	};
+	const openModal = () => {
+		canShowModal.value = true;
+	};
+	return {
+		showModal: canShowModal,
+		openModal,
+		closeModal,
+	};
+});
+
 export const useCalenderUIStore = defineStore("calendarUIStore", () => {
 	const showCalendar = ref(false);
 	const setCalendar = (bool: boolean) => {

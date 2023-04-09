@@ -1,5 +1,4 @@
 <template>
-	<Header />
 	<div class="w-1/2 mx-auto text-center align-middle py-36">
 		<h1 class="text-4xl font-semibold text-[#deaaff]">
 			Frequently Asked Questions

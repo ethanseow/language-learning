@@ -1,5 +1,4 @@
 <template>
-	<LoginModal :toggleModal="toggleModal" v-if="showModal" />
 	<div class="flex flex-row w-10/12 align-middle py-6 mx-auto">
 		<LogoText class="grow" />
 		<div
@@ -17,7 +16,14 @@
 				</div>
 			</NuxtLink>
             -->
-			<div @click="toggleModal">Login</div>
+			<AuthWrapper>
+				<template v-slot:unauth>
+					<div @click="modal.openModal">Login</div>
+				</template>
+				<template v-slot:auth>
+					<AccountDropdown />
+				</template>
+			</AuthWrapper>
 		</div>
 	</div>
 </template>
@@ -26,11 +32,12 @@
 import { storeToRefs } from "pinia";
 import { useAccountStore } from "~~/stores/account";
 
-const showModal = ref(false);
-const toggleModal = () => {
-	console.log("toggling");
-	showModal.value = !showModal.value;
-};
+const name = ref();
+onMounted(() => {
+	name.value = localStorage.getItem(authConsts.localStorageUsername);
+});
+
+const modal = useLoginModalUIStore();
 
 const accountStore = useAccountStore();
 

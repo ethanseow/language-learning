@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { type Ref } from "vue";
 import { type Time } from "@/utils/time";
+import { Firestore, collection, getDocs } from "firebase/firestore";
 export interface Session {
 	languageOffering: string;
 	languageSeeking: string;
@@ -27,5 +28,16 @@ export const useSessionStore = defineStore("sessionStore", () => {
 	const addUpcomingSessions = (newSession: Session) => {
 		upcomingSessions.value.push(newSession);
 	};
+	const fireStore: Firestore = useNuxtApp().$firestore;
+	const sessionCollection = collection(
+		fireStore,
+		firebaseConsts.sessionCollection
+	);
+	onMounted(async () => {
+		const docs = await getDocs(sessionCollection);
+		docs.forEach((doc) => {
+			console.log(doc.data());
+		});
+	});
 	return { pastSessions, upcomingSessions, addUpcomingSessions };
 });

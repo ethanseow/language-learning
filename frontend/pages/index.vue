@@ -1,5 +1,4 @@
 <template>
-	<Header />
 	<!---
 	<div
 		class="flex flex-row items-center justify-center bg-tertiary pt-5 px-16 pb-5"

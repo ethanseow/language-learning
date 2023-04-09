@@ -1,8 +1,6 @@
 <template>
 	<div class="contents">
-		<NuxtLink v-if="!userIsLoggedIn" to="/login">
-			<slot name="unauth"></slot>
-		</NuxtLink>
+		<slot v-if="!userIsLoggedIn" @click="" name="unauth"></slot>
 		<slot v-else name="auth"></slot>
 	</div>
 </template>
@@ -12,7 +10,6 @@ import { Auth } from "@firebase/auth";
 
 const userIsLoggedIn = ref(false);
 onMounted(() => {
-	userIsLoggedIn.value = auth.currentUser == null;
 	auth.onAuthStateChanged(function (user) {
 		if (user) {
 			userIsLoggedIn.value = true;
@@ -20,6 +17,7 @@ onMounted(() => {
 			userIsLoggedIn.value = false;
 		}
 	});
+	userIsLoggedIn.value = auth.currentUser == null;
 });
 const auth: Auth = useNuxtApp().$auth;
 </script>
