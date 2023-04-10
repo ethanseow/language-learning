@@ -105,7 +105,6 @@ const { upcomingSessions, pastSessions } = storeToRefs(useSessionStore());
 const { usePastSession } = defineProps<{
 	usePastSession: boolean | null;
 }>();
-console.log(usePastSession);
 const sessions = usePastSession ? pastSessions : upcomingSessions;
 const sortedSessions = computed(() => {
 	return sessions.value.slice().sort((a, b) => {

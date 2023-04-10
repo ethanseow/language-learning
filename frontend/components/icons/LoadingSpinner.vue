@@ -1,5 +1,7 @@
 <template>
-	<div class="lds-dual-ring"></div>
+	<div v-bind="$attrs">
+		<div class="lds-dual-ring"></div>
+	</div>
 </template>
 
 <script setup lang="ts"></script>

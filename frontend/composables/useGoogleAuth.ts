@@ -9,10 +9,6 @@ export const useGoogleAuth = () => {
 		try {
 			const result = await signInWithPopup(auth, provider);
 			user.value = result.user;
-			localStorage.setItem(
-				authConsts.localStorageUsername,
-				"" + result.user.displayName?.split("")?.[0]
-			);
 		} catch (e) {
 			error.value = e;
 		}

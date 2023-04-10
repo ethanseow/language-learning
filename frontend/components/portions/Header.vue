@@ -32,11 +32,6 @@
 import { storeToRefs } from "pinia";
 import { useAccountStore } from "~~/stores/account";
 
-const name = ref();
-onMounted(() => {
-	name.value = localStorage.getItem(authConsts.localStorageUsername);
-});
-
 const modal = useLoginModalUIStore();
 
 const accountStore = useAccountStore();
