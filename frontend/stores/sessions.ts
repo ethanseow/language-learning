@@ -10,7 +10,8 @@ import {
 	where,
 } from "firebase/firestore";
 import { Auth } from "firebase/auth";
-import { getSessions } from "~~/firebase/utils";
+import { createSession, getSessions } from "~~/firebase/utils";
+import _ from "lodash";
 export interface Session {
 	languageOffering: string;
 	languageSeeking: string;
@@ -42,22 +43,24 @@ export const useSessionStore = defineStore("sessionStore", () => {
 		},
         */
 	]);
-	const addUpcomingSessions = (newSession: Session) => {
-		upcomingSessions.value.push(newSession);
+	const addUpcomingSessions = async (newSession: Session) => {
+		const doc = await createSession(newSession);
+		if (doc) {
+			setUpcomingSessions([...upcomingSessions.value, newSession]);
+		}
 	};
-	const fbAuth = useAuthState();
+	const setUpcomingSessions = (sessions: Session[]) => {
+		upcomingSessions.value = _.cloneDeep(sessions);
+	};
+	const setPastSessions = (sessions: Session[]) => {
+		pastSessions.value = _.cloneDeep(sessions);
+	};
 	// need to think about this - cannot have it check every single time when user changes
-	watch(fbAuth.currentUser, async () => {
-		upcomingSessions.value = await getSessions(
-			false,
-			// @ts-ignore
-			fbAuth.auth.currentUser?.uid
-		);
-		pastSessions.value = await getSessions(
-			true,
-			// @ts-ignore
-			fbAuth.auth.currentUser?.uid
-		);
-	});
-	return { pastSessions, upcomingSessions, addUpcomingSessions };
+	return {
+		pastSessions,
+		upcomingSessions,
+		addUpcomingSessions,
+		setUpcomingSessions,
+		setPastSessions,
+	};
 });

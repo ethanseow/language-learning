@@ -32,6 +32,8 @@ import { useCalenderUIStore } from "@/stores/ui";
 import { useTempLanguageStore } from "~~/stores/temp/language";
 import { storeToRefs } from "pinia";
 import { Time } from "~~/utils/time";
+import { useNuxt } from "@nuxt/kit";
+import { Session } from "inspector";
 const languageChoice = useTempLanguageStore();
 const { languageOffering, languageSeeking } = storeToRefs(languageChoice);
 const calendarUi = useCalenderUIStore();
@@ -55,6 +57,7 @@ const calendarFlowUiStore = useCalendarUIFlowStore();
 const { setCalendarFlowState, setTempData } = calendarFlowUiStore;
 
 const confirmSelection = (time: Time) => {
+	const fbAuth = useAuthState();
 	const date = new Date(chosenDay.value);
 	date.setHours(time.hours, time.minutes);
 	const newSession = {
@@ -62,6 +65,7 @@ const confirmSelection = (time: Time) => {
 		languageSeeking: languageSeeking.value,
 		appointmentDate: date,
 		peerName: null,
+		userId: fbAuth.uid.value,
 	};
 	addUpcomingSessions(newSession);
 	resetButtonSelection();

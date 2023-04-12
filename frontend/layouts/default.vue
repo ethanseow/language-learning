@@ -1,5 +1,5 @@
 <template>
-	<div v-if="fbAuth.isLoggedIn.value">
+	<div v-if="true || (fbAuth.isLoggedIn.value && initialized)">
 		<LoginModal :toggleModal="modal.closeModal" v-if="modal.showModal" />
 		<Header />
 		<slot></slot>
@@ -16,6 +16,25 @@
 </template>
 
 <script setup lang="ts">
+import { getSessions } from "~~/firebase/utils";
+
+const initialized = ref(false);
 const fbAuth = useAuthState();
 const modal = useLoginModalUIStore();
+const { setPastSessions, setUpcomingSessions } = useSessionStore();
+watch(fbAuth.currentUser, async () => {
+	const upcomingSessions = await getSessions(
+		false,
+		// @ts-ignore
+		fbAuth.auth.currentUser?.uid
+	);
+	const pastSessions = await getSessions(
+		true,
+		// @ts-ignore
+		fbAuth.auth.currentUser?.uid
+	);
+	setPastSessions(pastSessions);
+	setUpcomingSessions(upcomingSessions);
+	initialized.value = true;
+});
 </script>

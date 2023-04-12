@@ -5,11 +5,16 @@ import {
 	QueryDocumentSnapshot,
 	SnapshotOptions,
 	Timestamp,
+	addDoc,
 	collection,
 	getDocs,
+	getFirestore,
 	query,
+	setDoc,
 	where,
 } from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 type FirebaseSession = Omit<Session, "appointmentDate"> & {
 	appointmentDate: Timestamp;
 };
@@ -47,13 +52,12 @@ export const sessionConverter = {
 	},
 };
 
-const fireStore: Firestore = useNuxtApp().$firestore;
-const sessionRef = collection(
-	fireStore,
-	firebaseConsts.sessionCollection
-).withConverter(sessionConverter);
-
 export const getSessions = async (isPast: boolean, userId: string) => {
+	const fs = useNuxtApp().$firestore;
+	const sessionRef = collection(
+		fs,
+		firebaseConsts.sessionCollection
+	).withConverter(sessionConverter);
 	const now = Timestamp.now();
 	const q = query(
 		sessionRef,
@@ -66,4 +70,23 @@ export const getSessions = async (isPast: boolean, userId: string) => {
 		temp.push(doc.data());
 	});
 	return temp;
+};
+
+export const createSession = async (session: Session) => {
+	const fs = useNuxtApp().$firestore;
+
+	const sessionRef = collection(
+		fs,
+		firebaseConsts.sessionCollection
+	).withConverter(sessionConverter);
+
+	// Add a new document with a generated id.
+	try {
+		const docRef = await addDoc(sessionRef, session);
+
+		return docRef;
+	} catch (error) {
+		console.log(error);
+		return null;
+	}
 };

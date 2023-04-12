@@ -11,6 +11,7 @@ export const useAuthState = () => {
 
 	const isLoggedIn = ref(false);
 	const currentUser = ref();
+	const uid = ref();
 
 	const auth: Auth = useNuxtApp().$auth;
 	console.log("this is auth", auth);
@@ -22,8 +23,7 @@ export const useAuthState = () => {
 				currentUser.value = user;
 				console.log("got user");
 				username.value = user.displayName?.split(" ")?.[0];
-			} else {
-				username.value = "";
+				uid.value = user.uid;
 			}
 		});
 	});
@@ -34,6 +34,7 @@ export const useAuthState = () => {
 	};
 
 	return {
+		uid,
 		isLoggedIn,
 		currentUser,
 		username,
