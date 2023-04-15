@@ -69,14 +69,17 @@
 	height: 30px;
 	width: 30px;
 }
+.rotate {
+	transform: rotate(180deg);
+}
 </style>
 
 <script setup lang="ts">
 import { useCalendarStore } from "~~/stores/calendar";
 
-const monthIndex = ref(1);
-const year = ref(2023);
 const today = new Date();
+const monthIndex = ref(today.getMonth());
+const year = ref(today.getFullYear());
 const chosenDay = ref(new Date(year.value, monthIndex.value, today.getDate()));
 const setChosenDay = (day: number) => {
 	const newDate = new Date(year.value, monthIndex.value, day);
@@ -94,6 +97,9 @@ const chosenDayString = computed(() => {
 	})}, ${months[chosenDay.value.getMonth()]} ${chosenDay.value.getDate()}`;
 });
 const changeMonth = (v: number) => {
+	if (monthIndex.value + v < today.getMonth()) {
+		return;
+	}
 	monthIndex.value = monthIndex.value + v;
 	if (monthIndex.value == 12) {
 		monthIndex.value = 0;
@@ -131,9 +137,3 @@ const showAvailableCells = (day: any) => {
 };
 const calendar = useCalendarStore();
 </script>
-
-<style scoped>
-.rotate {
-	transform: rotate(180deg);
-}
-</style>

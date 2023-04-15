@@ -1,4 +1,6 @@
 import express, { Request, RequestHandler, Response } from "express";
+import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import cors from "cors";
 import bodyParser from "body-parser";
 import {
@@ -21,7 +23,8 @@ import { SocketEmits } from "./sockets";
 import session, { Session, SessionOptions, Store } from "express-session";
 import type { IncomingHttpHeaders, IncomingMessage } from "http";
 import { app as firebaseApp, analytics } from "@/firebase";
-
+import expressApp from "./api/app";
+/*
 const app = express();
 const port = 4000;
 const http = require("http");
@@ -40,7 +43,10 @@ app.use(
 		origin: "*",
 	})
 );
-
+*/
+const app = expressApp.app;
+const server = expressApp.server;
+const sessionMiddleware = expressApp.sessionMiddleware;
 let establishedRooms: Record<string, Room> = {};
 let reverseUserLookup: Record<string, UserLookup> = {};
 
@@ -369,11 +375,48 @@ io.on("connection", (socket) => {
 	});
 });
 
+// put this in a separate file for now
 app.get("/", (req, res) => {
 	res.setHeader;
 	res.send({ data: "hello world" });
 });
 
+app.post("/sessionLogin", (req, res) => {
+	// Get the ID token passed and the CSRF token.
+	const idToken = req.body.idToken.toString();
+	const csrfToken = req.body.csrfToken.toString();
+	// Guard against CSRF attacks.
+	if (csrfToken !== req.cookies.csrfToken) {
+		res.status(401).send("UNAUTHORIZED REQUEST!");
+		return;
+	}
+	// Set session expiration to 5 days.
+	const expiresIn = 60 * 60 * 24 * 5 * 1000;
+	// Create the session cookie. This will also verify the ID token in the process.
+	// The session cookie will have the same claims as the ID token.
+	// To only allow session cookie setting on recent sign-in, auth_time in ID token
+	// can be checked to ensure user was recently signed in before creating a session cookie.
+	getAuth()
+		.createSessionCookie(idToken, { expiresIn })
+		.then(
+			(sessionCookie) => {
+				// Set cookie policy for session cookie.
+				const options = {
+					maxAge: expiresIn,
+					httpOnly: true,
+					secure: true,
+				};
+				res.cookie("session", sessionCookie, options);
+				res.end(JSON.stringify({ status: "success" }));
+			},
+			(error) => {
+				res.status(401).send("UNAUTHORIZED REQUEST!");
+			}
+		);
+});
+
+/*
 server.listen(port, () => {
 	return console.log(`Express is listening at http://localhost:${port}`);
 });
+*/

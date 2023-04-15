@@ -7,6 +7,8 @@ import {
 	Timestamp,
 	addDoc,
 	collection,
+	doc,
+	getDoc,
 	getDocs,
 	getFirestore,
 	query,
@@ -14,14 +16,23 @@ import {
 	where,
 } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, type User as FirebaseUser } from "firebase/auth";
+
 type FirebaseSession = Omit<Session, "appointmentDate"> & {
 	appointmentDate: Timestamp;
 };
+
+export type User = {
+	uid: string;
+	username: string;
+};
+
 type SessionDocumentData = DocumentData & FirebaseSession;
+type UserDocumentData = DocumentData & User;
 
 export const sessionConverter = {
 	toFirestore(session: Session): DocumentData {
+		console.log("Session", session);
 		return {
 			appointmentDate: Timestamp.fromDate(session.appointmentDate),
 			languageOffering: session.languageOffering,
@@ -48,6 +59,26 @@ export const sessionConverter = {
 			languageSeeking,
 			peerName,
 			userId,
+		};
+	},
+};
+
+export const userConverter = {
+	toFirestore(user: User): DocumentData {
+		return {
+			uid: user.uid,
+			username: user.username,
+		};
+	},
+	fromFirestore(
+		snapshot: QueryDocumentSnapshot,
+		options: SnapshotOptions
+	): User {
+		const data: UserDocumentData = snapshot.data(options);
+		const { uid, username } = data;
+		return {
+			uid,
+			username,
 		};
 	},
 };
@@ -82,9 +113,53 @@ export const createSession = async (session: Session) => {
 
 	// Add a new document with a generated id.
 	try {
+		console.log("added doc");
 		const docRef = await addDoc(sessionRef, session);
-
 		return docRef;
+	} catch (error) {
+		console.log(error);
+		return null;
+	}
+};
+
+export const getUser = async (uid: string) => {
+	const fs = useNuxtApp().$firestore;
+
+	const userRef = collection(fs, firebaseConsts.users).withConverter(
+		userConverter
+	);
+	const q = query(userRef, where("uid", "==", uid));
+	const docs = await getDocs(q);
+
+	if (docs.empty) {
+		console.log("error - no users with that uid");
+		return null;
+	} else {
+		const user = docs.docs[0].data();
+		return user;
+	}
+};
+
+export const createOrGetUser = async (user: FirebaseUser) => {
+	const fs = useNuxtApp().$firestore;
+
+	const newUser: User = {
+		username: user.displayName,
+		uid: user.uid,
+	};
+
+	// Add a new document with a generated id.
+	try {
+		await setDoc(
+			doc(fs, firebaseConsts.users, user.uid),
+			{
+				...newUser,
+			},
+			{
+				merge: true,
+			}
+		);
+		return newUser;
 	} catch (error) {
 		console.log(error);
 		return null;

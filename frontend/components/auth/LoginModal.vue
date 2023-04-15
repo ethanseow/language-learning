@@ -14,7 +14,7 @@
 			<div class="font-bold text-4xl">Hello!</div>
 			<div>Use your email or another service to continue with Linkg</div>
 			<div
-				@click="googleAuth.signInWithGoogle"
+				@click="signInWithGoogle"
 				class="w-full flex flex-row items-center gap-2 px-4 py-2 bg-gray-400 rounded-md"
 			>
 				<GoogleIcon class="w-[40px]" />
@@ -43,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import { useAuth } from "~~/composables/useAuth";
 const { toggleModal } = defineProps<{
 	toggleModal: Function;
 }>();
@@ -55,12 +56,13 @@ const signInError = ref({
 	status: false,
 	message: "Error Signing In - Please Try Again",
 });
-const googleAuth = useGoogleAuth();
-watch(googleAuth.error, (error) => {
+const auth = useAuth();
+const signInWithGoogle = auth.signInWithGoogle;
+watch(auth.error, () => {
 	signInError.value.status = true;
 });
 
-watch(googleAuth.user, (user) => {
+watch(auth.user, () => {
 	signInSuccess.value.status = true;
 	onSuccess.value = setTimeout(() => {
 		toggleModal();

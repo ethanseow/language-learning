@@ -34,6 +34,7 @@ import { storeToRefs } from "pinia";
 import { Time } from "~~/utils/time";
 import { useNuxt } from "@nuxt/kit";
 import { Session } from "inspector";
+const fbAuth = useAuthState();
 const languageChoice = useTempLanguageStore();
 const { languageOffering, languageSeeking } = storeToRefs(languageChoice);
 const calendarUi = useCalenderUIStore();
@@ -57,7 +58,6 @@ const calendarFlowUiStore = useCalendarUIFlowStore();
 const { setCalendarFlowState, setTempData } = calendarFlowUiStore;
 
 const confirmSelection = (time: Time) => {
-	const fbAuth = useAuthState();
 	const date = new Date(chosenDay.value);
 	date.setHours(time.hours, time.minutes);
 	const newSession = {

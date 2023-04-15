@@ -1,7 +1,7 @@
 // nuxt.config.js
 export default defineNuxtConfig({
 	// ... other options
-	ssr: false,
+	ssr: true,
 	css: ["~/assets/css/main.css"],
 	runtimeConfig: {
 		public: {

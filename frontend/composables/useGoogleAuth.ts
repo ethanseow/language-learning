@@ -1,3 +1,4 @@
+import axios from "axios";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 export const useGoogleAuth = () => {
 	const provider = new GoogleAuthProvider();
@@ -9,6 +10,7 @@ export const useGoogleAuth = () => {
 		try {
 			const result = await signInWithPopup(auth, provider);
 			user.value = result.user;
+			const token = result.user.getIdToken();
 		} catch (e) {
 			error.value = e;
 		}
