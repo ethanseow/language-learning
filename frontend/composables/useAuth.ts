@@ -1,16 +1,16 @@
 import axios from "axios";
 import {
-	getAuth,
 	signInWithPopup,
 	GoogleAuthProvider,
 	AuthProvider,
+	Auth,
 } from "firebase/auth";
 import { Ref } from "nuxt/dist/app/compat/capi";
 import { createOrGetUser, getUser } from "~~/utils/firebase";
 import { type User } from "~~/utils/firebase";
 
 export const useAuth = () => {
-	const auth = getAuth();
+	const auth: Auth = useNuxtApp().$auth;
 	const error = ref({
 		hasError: false,
 		message: "",
@@ -19,10 +19,17 @@ export const useAuth = () => {
 	const apiUrl = useRuntimeConfig().public.apiBase;
 	const createCookie = (token: string) => {
 		axios
-			.post(apiUrl + "/api/login", {
-				token,
-			})
+			.post(
+				apiUrl + "/api/login",
+				{
+					token,
+				},
+				{
+					withCredentials: true,
+				}
+			)
 			.then((res) => {
+				console.log(res);
 				if (res.status == 200) {
 					navigateTo(urlConsts.DASHBOARD);
 				}
@@ -53,15 +60,18 @@ export const useAuth = () => {
 
 	function logout() {
 		auth.signOut().then(() => {});
-		axios.get("");
+		axios.post(apiUrl + "/api/logout", {}).then((res) => {
+			console.log(res);
+		});
 	}
-
-	auth.onAuthStateChanged(async (newUser) => {
-		if (newUser != null) {
-			user.value = await getUser(newUser.uid);
-		} else {
-			user.value = null;
-		}
+	onMounted(() => {
+		auth.onAuthStateChanged(async (newUser) => {
+			if (newUser != null) {
+				user.value = await getUser(newUser.uid);
+			} else {
+				user.value = null;
+			}
+		});
 	});
 
 	const signInWithGoogle = () => signIn(new GoogleAuthProvider());

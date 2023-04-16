@@ -22,7 +22,8 @@ app.use(bodyParser.json());
 // app.use(sessionMiddleware);
 app.use(
 	cors({
-		origin: "*",
+		origin: "http://localhost:3000",
+		credentials: true,
 	})
 );
 
@@ -37,9 +38,11 @@ const certs = {
 	projectId: process.env.FB_ADMIN_PROJECT_ID,
 };
 
-initializeApp({
+const fbApp = initializeApp({
 	credential: cert(certs),
 });
+
+const auth = getAuth(fbApp);
 
 app.post("/api/login", async (req, res) => {
 	const { token } = req.body;
@@ -50,12 +53,13 @@ app.post("/api/login", async (req, res) => {
 		const options = {
 			maxAge: expiresIn,
 			httpOnly: true,
-			secure: process.env.NODE_ENV === "production",
+			secure: false,
 		};
 
-		const authCookie = await getAuth().createSessionCookie(token, {
+		const authCookie = await auth.createSessionCookie(token, {
 			expiresIn,
 		});
+		console.log("Cookie:", authCookie);
 		res.cookie("authCookie", authCookie, options);
 		res.end(JSON.stringify({ status: "success" }));
 	} catch (err) {
@@ -65,6 +69,18 @@ app.post("/api/login", async (req, res) => {
 
 app.post("/api/logout", async (req, res) => {
 	res.clearCookie("authCookie");
+});
+
+app.post("/test", async (req, res) => {
+	const expiresIn = 60 * 60 * 24 * 5 * 1000;
+	const options = {
+		maxAge: expiresIn,
+		httpOnly: false,
+		secure: false,
+		sameSite: false,
+	};
+	res.cookie("cookie", "this is a cookie", options);
+	res.end(JSON.stringify({ status: "success" }));
 });
 
 server.listen(port, () => {

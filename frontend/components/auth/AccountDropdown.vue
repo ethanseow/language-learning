@@ -27,15 +27,19 @@ const username = ref();
 watch(auth.user, async (newUser) => {
 	const uid = newUser.uid;
 	const name = await getUser(uid);
-	username.value = name;
+	username.value = name?.username;
 });
 
 const canShowDropdown = ref(false);
 const toggleDropdown = () => {
 	canShowDropdown.value = !canShowDropdown.value;
 };
-if (process.server && authCookie.value) {
+console.log("Cookie:", process.server && authCookie.value);
+console.log(process.server);
+if (process.server) {
+	console.info("on server");
 	const jwt = require("jsonwebtoken");
+	console.log("inside of server");
 	const decoded = jwt.decode(authCookie.value);
 	const uid: string = decoded.uid;
 	const user = await getUser(uid);
