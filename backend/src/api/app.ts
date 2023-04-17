@@ -69,6 +69,7 @@ app.post("/api/login", async (req, res) => {
 
 app.post("/api/logout", async (req, res) => {
 	res.clearCookie("authCookie");
+	res.end(JSON.stringify({ status: "success" }));
 });
 
 app.post("/test", async (req, res) => {

@@ -8,6 +8,7 @@ import {
 import { Ref } from "nuxt/dist/app/compat/capi";
 import { createOrGetUser, getUser } from "~~/utils/firebase";
 import { type User } from "~~/utils/firebase";
+import jwt_decode from "jwt-decode";
 
 export const useAuth = () => {
 	const auth: Auth = useNuxtApp().$auth;
@@ -15,7 +16,10 @@ export const useAuth = () => {
 		hasError: false,
 		message: "",
 	});
-	const user: Ref<User | null> = ref(null);
+	const isLoggedIn = useState("isLoggedIn", () => false);
+	const user: Ref<User> = useState("user", () => {});
+	//const isLoggedIn = ref(false);
+	//const user = ref();
 	const apiUrl = useRuntimeConfig().public.apiBase;
 	const createCookie = (token: string) => {
 		axios
@@ -28,12 +32,7 @@ export const useAuth = () => {
 					withCredentials: true,
 				}
 			)
-			.then((res) => {
-				console.log(res);
-				if (res.status == 200) {
-					navigateTo(urlConsts.DASHBOARD);
-				}
-			})
+			.then((res) => {})
 			.catch((err) => {
 				console.log(err);
 				error.value = {
@@ -49,6 +48,8 @@ export const useAuth = () => {
 			const token = await result.user.getIdToken();
 			user.value = await createOrGetUser(result.user);
 			createCookie(token);
+			isLoggedIn.value = true;
+			navigateTo(urlConsts.DASHBOARD);
 		} catch (e) {
 			console.log(e);
 			error.value = {
@@ -60,25 +61,54 @@ export const useAuth = () => {
 
 	function logout() {
 		auth.signOut().then(() => {});
-		axios.post(apiUrl + "/api/logout", {}).then((res) => {
-			console.log(res);
-		});
+		axios
+			.post(apiUrl + "/api/logout", {}, { withCredentials: true })
+			.then((res) => {
+				user.value = null;
+				isLoggedIn.value = false;
+				navigateTo("/");
+			});
 	}
+
+	const initAuth = async () => {
+		const authCookie = useCookie("authCookie");
+		if (authCookie.value) {
+			const decoded = jwt_decode(authCookie.value);
+			//@ts-ignore
+			const uid: string = decoded.user_id;
+			const fbUser = await getUser(uid);
+			user.value = fbUser;
+			isLoggedIn.value = true;
+		}
+	};
+
 	onMounted(() => {
+		const hello = useState("log");
+		const world = useState("user");
+		const state = useState("state");
+		console.log("client side isLoggedIn", hello.value);
+		console.log("client side user", world.value);
+		console.log("this is the state on the auth side", state.value);
+		/*
 		auth.onAuthStateChanged(async (newUser) => {
 			if (newUser != null) {
 				user.value = await getUser(newUser.uid);
+				isLoggedIn.value = true;
 			} else {
 				user.value = null;
+				isLoggedIn.value = false;
 			}
 		});
+        */
 	});
 
 	const signInWithGoogle = () => signIn(new GoogleAuthProvider());
 	return {
+		isLoggedIn,
 		user,
 		error,
 		signInWithGoogle,
 		logout,
+		initAuth,
 	};
 };

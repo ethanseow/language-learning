@@ -16,6 +16,10 @@
 				</div>
 			</NuxtLink>
             -->
+
+			<AccountDropdown v-if="auth.isLoggedIn" />
+			<div v-else @click="modal.openModal">Login</div>
+			<!---
 			<AuthWrapper>
 				<template v-slot:unauth>
 					<div @click="modal.openModal">Login</div>
@@ -24,6 +28,7 @@
 					<AccountDropdown />
 				</template>
 			</AuthWrapper>
+                    -->
 		</div>
 	</div>
 </template>
@@ -31,7 +36,22 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useAccountStore } from "~~/stores/account";
+import { type Ref } from "vue";
 
+const auth = useAuth();
+// const isLoggedIn = toRef`s(auth.isLoggedIn);
+// const isLoggedIn = useState("isLoggedIn", () => false);
+
+/*
+if (process.server) {
+	const authCookie = useCookie("authCookie");
+	isLoggedIn.value = authCookie.value ? true : false;
+} else {
+	watch(auth.isLoggedIn, (newValue) => {
+		isLoggedIn.value = newValue ? true : false;
+	});
+}
+*/
 const modal = useLoginModalUIStore();
 
 const accountStore = useAccountStore();

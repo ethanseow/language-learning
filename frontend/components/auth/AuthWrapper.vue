@@ -15,9 +15,11 @@ if (process.server) {
 	const authCookie = useCookie("authCookie");
 	isLoggedIn.value = authCookie.value ? true : false;
 } else {
+	/*
 	watch(auth.user, (newValue) => {
 		isLoggedIn.value = newValue ? true : false;
 	});
+    */
 }
 // const fbAuth = useAuthState();
 </script>

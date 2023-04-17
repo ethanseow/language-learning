@@ -3,16 +3,10 @@
 
 	<div v-if="true || (fbAuth.auth.currentUser && initialized)">
     -->
-	<!--
-
 
 	<div>
 		<LoginModal :toggleModal="modal.closeModal" v-if="modal.showModal" />
-		<Header />
-	</div>
-    -->
-
-	<div>
+		<HeaderVue />
 		<slot></slot>
 	</div>
 	<!--
@@ -26,26 +20,8 @@
 </template>
 
 <script setup lang="ts">
+import HeaderVue from "~~/components/portions/Header.vue";
 const modal = useLoginModalUIStore();
-// import { getSessions } from "~~/firebase/utils";
-/*
-const initialized = ref(false);
-const fbAuth = useAuthState();
-const { setPastSessions, setUpcomingSessions } = useSessionStore();
-watch(fbAuth.currentUser, async () => {
-	const upcomingSessions = await getSessions(
-		false,
-		// @ts-ignore
-		fbAuth.auth.currentUser?.uid
-	);
-	const pastSessions = await getSessions(
-		true,
-		// @ts-ignore
-		fbAuth.auth.currentUser?.uid
-	);
-	setPastSessions(pastSessions);
-	setUpcomingSessions(upcomingSessions);
-	initialized.value = true;
-});
-*/
+const auth = useAuth();
+await useAsyncData("initAuth", () => auth.initAuth());
 </script>
