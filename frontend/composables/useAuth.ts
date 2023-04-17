@@ -18,8 +18,6 @@ export const useAuth = () => {
 	});
 	const isLoggedIn = useState("isLoggedIn", () => false);
 	const user: Ref<User> = useState("user", () => {});
-	//const isLoggedIn = ref(false);
-	//const user = ref();
 	const apiUrl = useRuntimeConfig().public.apiBase;
 	const createCookie = (token: string) => {
 		axios
@@ -81,27 +79,6 @@ export const useAuth = () => {
 			isLoggedIn.value = true;
 		}
 	};
-
-	onMounted(() => {
-		const hello = useState("log");
-		const world = useState("user");
-		const state = useState("state");
-		console.log("client side isLoggedIn", hello.value);
-		console.log("client side user", world.value);
-		console.log("this is the state on the auth side", state.value);
-		/*
-		auth.onAuthStateChanged(async (newUser) => {
-			if (newUser != null) {
-				user.value = await getUser(newUser.uid);
-				isLoggedIn.value = true;
-			} else {
-				user.value = null;
-				isLoggedIn.value = false;
-			}
-		});
-        */
-	});
-
 	const signInWithGoogle = () => signIn(new GoogleAuthProvider());
 	return {
 		isLoggedIn,
