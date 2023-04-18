@@ -102,12 +102,12 @@ import { storeToRefs } from "pinia";
 import { Session } from "~~/stores/sessions";
 import { urlConsts } from "~~/constants/urlConsts";
 const { upcomingSessions, pastSessions } = storeToRefs(useSessionStore());
-const { usePastSession } = defineProps<{
+const { usePastSession, sessions } = defineProps<{
 	usePastSession: boolean | null;
+	sessions: Session[];
 }>();
-const sessions = usePastSession ? pastSessions : upcomingSessions;
 const sortedSessions = computed(() => {
-	return sessions.value.slice().sort((a, b) => {
+	return sessions.slice().sort((a, b) => {
 		return b.appointmentDate.getTime() - a.appointmentDate.getTime();
 	});
 });

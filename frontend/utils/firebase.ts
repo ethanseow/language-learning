@@ -84,27 +84,33 @@ export const userConverter = {
 };
 
 export const getSessions = async (isPast: boolean, userId: string) => {
-	const fs = useNuxtApp().$firestore;
+	console.log("calling getSessions");
+	const fs = useFirebase().$firestore.value;
+	console.log("after fs initialization");
 	const sessionRef = collection(
 		fs,
 		firebaseConsts.sessionCollection
 	).withConverter(sessionConverter);
+	console.log("after sessionRef initialization");
 	const now = Timestamp.now();
 	const q = query(
 		sessionRef,
 		where("userId", "==", userId),
 		where("appointmentDate", isPast ? "<" : ">=", now)
 	);
+	console.log("after query initialization");
 	const docs = await getDocs(q);
+	console.log("after getDocs ");
 	const temp: Session[] = [];
 	docs.forEach((doc) => {
 		temp.push(doc.data());
 	});
+	console.log("temp", temp);
 	return temp;
 };
 
 export const createSession = async (session: Session) => {
-	const fs = useNuxtApp().$firestore;
+	const fs = useFirebase().$firestore.value;
 
 	const sessionRef = collection(
 		fs,
@@ -123,7 +129,7 @@ export const createSession = async (session: Session) => {
 };
 
 export const getUser = async (uid: string) => {
-	const fs = useNuxtApp().$firestore;
+	const fs = useFirebase().$firestore.value;
 
 	const userRef = collection(fs, firebaseConsts.users).withConverter(
 		userConverter
@@ -141,7 +147,7 @@ export const getUser = async (uid: string) => {
 };
 
 export const createOrGetUser = async (user: FirebaseUser) => {
-	const fs = useNuxtApp().$firestore;
+	const fs = useFirebase().$firestore.value;
 
 	const newUser: User = {
 		username: user.displayName,
