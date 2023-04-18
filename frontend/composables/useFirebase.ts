@@ -18,8 +18,8 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 export const useFirebase = () => {
-	const $auth = useState("app", () => getAuth(app));
-	const $firestore = useState("", () => getFirestore(app));
+	const $auth = getAuth(app);
+	const $firestore = getFirestore(app);
 
 	return {
 		$auth,

@@ -85,7 +85,7 @@ export const userConverter = {
 
 export const getSessions = async (isPast: boolean, userId: string) => {
 	console.log("calling getSessions");
-	const fs = useFirebase().$firestore.value;
+	const fs = useFirebase().$firestore;
 	console.log("after fs initialization");
 	const sessionRef = collection(
 		fs,
@@ -110,7 +110,7 @@ export const getSessions = async (isPast: boolean, userId: string) => {
 };
 
 export const createSession = async (session: Session) => {
-	const fs = useFirebase().$firestore.value;
+	const fs = useFirebase().$firestore;
 
 	const sessionRef = collection(
 		fs,
@@ -129,7 +129,7 @@ export const createSession = async (session: Session) => {
 };
 
 export const getUser = async (uid: string) => {
-	const fs = useFirebase().$firestore.value;
+	const fs = useFirebase().$firestore;
 
 	const userRef = collection(fs, firebaseConsts.users).withConverter(
 		userConverter
@@ -147,7 +147,7 @@ export const getUser = async (uid: string) => {
 };
 
 export const createOrGetUser = async (user: FirebaseUser) => {
-	const fs = useFirebase().$firestore.value;
+	const fs = useFirebase().$firestore;
 
 	const newUser: User = {
 		username: user.displayName,

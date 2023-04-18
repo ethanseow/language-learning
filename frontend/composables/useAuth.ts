@@ -11,7 +11,7 @@ import { type User } from "~~/utils/firebase";
 import jwt_decode from "jwt-decode";
 
 export const useAuth = () => {
-	const auth: Auth = useNuxtApp().$auth;
+	const auth: Auth = useFirebase().$auth;
 	const error = ref({
 		hasError: false,
 		message: "",
