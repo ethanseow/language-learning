@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import dotenv from "dotenv";
+//useRuntimeConfig();
 dotenv.config({ path: "../.env" });
 //const config = useRuntimeConfig();
 //console.log(config.public.apiKey);

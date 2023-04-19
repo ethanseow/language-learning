@@ -11,7 +11,7 @@ import { type User } from "~~/utils/firebase";
 import jwt_decode from "jwt-decode";
 
 export const useAuth = () => {
-	const auth: Auth = useFirebase().$auth;
+	const auth: Auth = useNuxtApp().$auth;
 	const error = ref({
 		hasError: false,
 		message: "",
@@ -72,6 +72,7 @@ export const useAuth = () => {
 		const authCookie = useCookie("authCookie");
 		if (authCookie.value) {
 			const decoded = jwt_decode(authCookie.value);
+			console.log("decoded:", decoded);
 			//@ts-ignore
 			const uid: string = decoded.user_id;
 			const fbUser = await getUser(uid);

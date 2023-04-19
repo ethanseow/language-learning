@@ -6,5 +6,11 @@
 
 <script setup lang="ts">
 const auth = useAuth();
+onMounted(async () => {
+	const user = await getUser("2Uxv8sPDFdNoErHwEjjjtUmdMbQ2");
+	console.log("user is", user);
+	console.log("apiBase", useRuntimeConfig().public.apiBase);
+	console.log("projectId", useRuntimeConfig().public.projectId);
+});
 </script>
 <style scoped></style>

@@ -85,7 +85,7 @@ export const userConverter = {
 
 export const getSessions = async (isPast: boolean, userId: string) => {
 	console.log("calling getSessions");
-	const fs = useFirebase().$firestore;
+	const fs = useNuxtApp().$firestore;
 	console.log("after fs initialization");
 	const sessionRef = collection(
 		fs,
@@ -110,7 +110,7 @@ export const getSessions = async (isPast: boolean, userId: string) => {
 };
 
 export const createSession = async (session: Session) => {
-	const fs = useFirebase().$firestore;
+	const fs = useNuxtApp().$firestore;
 
 	const sessionRef = collection(
 		fs,
@@ -129,13 +129,25 @@ export const createSession = async (session: Session) => {
 };
 
 export const getUser = async (uid: string) => {
-	const fs = useFirebase().$firestore;
-
+	const fs = useNuxtApp().$firestore;
+	//console.log("fs", fs);
 	const userRef = collection(fs, firebaseConsts.users).withConverter(
 		userConverter
 	);
 	const q = query(userRef, where("uid", "==", uid));
 	const docs = await getDocs(q);
+	/*
+	const sessionRef = collection(
+		fs,
+		firebaseConsts.sessionCollection
+	).withConverter(sessionConverter);
+	const allDocs = await getDocs(sessionRef);
+	console.log("before data all");
+	allDocs.forEach((d) => {
+		console.log("Data:", d.id, d.data());
+	});
+	console.log("after data all");
+    */
 
 	if (docs.empty) {
 		console.log("error - no users with that uid");
@@ -147,7 +159,7 @@ export const getUser = async (uid: string) => {
 };
 
 export const createOrGetUser = async (user: FirebaseUser) => {
-	const fs = useFirebase().$firestore;
+	const fs = useNuxtApp().$firestore;
 
 	const newUser: User = {
 		username: user.displayName,
