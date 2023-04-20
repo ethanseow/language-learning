@@ -10,7 +10,7 @@ import {
 	where,
 } from "firebase/firestore";
 import { Auth } from "firebase/auth";
-import { createSession, getSessions } from "~~/utils/firebase";
+import { createSession } from "~~/utils/firebase";
 import _ from "lodash";
 export interface Session {
 	languageOffering: string;

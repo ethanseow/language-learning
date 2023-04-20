@@ -26,4 +26,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 	nuxtApp.vueApp.provide("firestore", firestore);
 	nuxtApp.provide("firestore", firestore);
+
+	nuxtApp.vueApp.provide("provided", "hello world");
+	nuxtApp.provide("provided", "hello world");
 });

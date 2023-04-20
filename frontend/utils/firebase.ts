@@ -83,29 +83,27 @@ export const userConverter = {
 	},
 };
 
-export const getSessions = async (isPast: boolean, userId: string) => {
-	console.log("calling getSessions");
-	const fs = useNuxtApp().$firestore;
-	console.log("after fs initialization");
+export const getSessions = async (
+	firestore: Firestore,
+	isPast: boolean,
+	userId: string
+) => {
+	const fs = firestore;
 	const sessionRef = collection(
 		fs,
 		firebaseConsts.sessionCollection
 	).withConverter(sessionConverter);
-	console.log("after sessionRef initialization");
 	const now = Timestamp.now();
 	const q = query(
 		sessionRef,
 		where("userId", "==", userId),
 		where("appointmentDate", isPast ? "<" : ">=", now)
 	);
-	console.log("after query initialization");
 	const docs = await getDocs(q);
-	console.log("after getDocs ");
 	const temp: Session[] = [];
 	docs.forEach((doc) => {
 		temp.push(doc.data());
 	});
-	console.log("temp", temp);
 	return temp;
 };
 
@@ -149,6 +147,7 @@ export const getUser = async (uid: string) => {
 	console.log("after data all");
     */
 
+	console.log("in getUser - finished using useNuxtApp");
 	if (docs.empty) {
 		console.log("error - no users with that uid");
 		return null;

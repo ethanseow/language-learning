@@ -13,16 +13,20 @@ const modal = useLoginModalUIStore();
 const auth = useAuth();
 const sessions = useSessionStore();
 const handler = async () => {
-	console.log("in initAuth");
+	const nuxtApp = useNuxtApp();
 	await auth.initAuth();
-	console.log("after initAuth");
-	const upcomingSessions = await getSessions(false, auth.user.value.uid);
-	const pastSessions = await getSessions(true, auth.user.value.uid);
-	console.log(pastSessions);
+	const upcomingSessions = await getSessions(
+		nuxtApp.$firestore,
+		false,
+		auth.user.value.uid
+	);
+	const pastSessions = await getSessions(
+		nuxtApp.$firestore,
+		true,
+		auth.user.value.uid
+	);
 	sessions.setPastSessions(pastSessions);
 	sessions.setUpcomingSessions(upcomingSessions);
-	console.log("past sessions", sessions.pastSessions);
-	return;
 };
 await useAsyncData("initAuth", handler);
 </script>

@@ -72,7 +72,6 @@ export const useAuth = () => {
 		const authCookie = useCookie("authCookie");
 		if (authCookie.value) {
 			const decoded = jwt_decode(authCookie.value);
-			console.log("decoded:", decoded);
 			//@ts-ignore
 			const uid: string = decoded.user_id;
 			const fbUser = await getUser(uid);
