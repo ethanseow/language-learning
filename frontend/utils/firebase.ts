@@ -11,13 +11,14 @@ import {
 	getDoc,
 	getDocs,
 	getFirestore,
+	limit,
 	query,
 	setDoc,
 	where,
 } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { getAuth, type User as FirebaseUser } from "firebase/auth";
-
+//import firebaseConsts from "~~/constants/firebaseConsts";
 type FirebaseSession = Omit<Session, "appointmentDate"> & {
 	appointmentDate: Timestamp;
 };
@@ -86,17 +87,17 @@ export const userConverter = {
 		};
 	},
 };
-
+export const test = async (f: Firestore) => {
+	collection(f, "sessions");
+};
 export const getSessions = async (
 	firestore: Firestore,
 	isPast: boolean,
 	userId: string
 ) => {
-	const fs = firestore;
-	const sessionRef = collection(
-		fs,
-		firebaseConsts.sessionCollection
-	).withConverter(sessionConverter);
+	const sessionRef = collection(firestore, "sessions").withConverter(
+		sessionConverter
+	);
 	const now = Timestamp.now();
 	const q = query(
 		sessionRef,
@@ -119,24 +120,23 @@ export const userHasMatchingSession = async (
 	seeking: string,
 	sessionTime: Date
 ) => {
-	const fs = firestore;
-	const sessionRef = collection(
-		fs,
-		firebaseConsts.sessionCollection
-	).withConverter(sessionConverter);
+	//firebaseConsts.sessionCollection
+	const sessionRef = collection(firestore, "sessions").withConverter(
+		sessionConverter
+	);
 	const q = query(
 		sessionRef,
 		where("userId", "==", userId),
-		where("offering", "==", offering),
-		where("seeking", "==", seeking),
-		where("appointmentDate", "==", sessionTime)
+		where("languageOffering", "==", offering),
+		where("languageSeeking", "==", seeking),
+		where("appointmentDate", "==", sessionTime),
+		limit(1)
 	);
 	const docs = await getDocs(q);
-	const temp: Session[] = [];
 	docs.forEach((doc) => {
-		temp.push({ ...doc.data() });
+		return doc;
 	});
-	return temp;
+	return null;
 };
 
 export const createSession = async (session: Session) => {
