@@ -32,7 +32,7 @@
 		</div>
 		<div class="grow shrink h-full basis-0 p-3">
 			<AppointmentTimes
-				:times="calendar.availableTimes"
+				:times="times"
 				:chosen-day-string="chosenDayString"
 				:chosen-day="chosenDay"
 			/>
@@ -78,11 +78,19 @@
 import { useCalendarStore } from "~~/stores/calendar";
 
 const today = new Date();
-const monthIndex = ref(today.getMonth());
-const year = ref(today.getFullYear());
-const chosenDay = ref(new Date(year.value, monthIndex.value, today.getDate()));
+today.setUTCHours(today.getUTCHours() + 24 * 2);
+const monthIndex = ref(today.getUTCMonth());
+const year = ref(today.getUTCFullYear());
+const chosenDay = ref(
+	new Date(year.value, monthIndex.value, today.getUTCDate())
+);
+const calendar = useCalendarStore();
+const times = computed(() => {
+	return calendar.availableTimes;
+});
 const setChosenDay = (day: number) => {
 	const newDate = new Date(year.value, monthIndex.value, day);
+	console.log("chosen date", newDate);
 	if (today.getTime() < newDate.getTime()) {
 		chosenDay.value = new Date(year.value, monthIndex.value, day);
 	}
@@ -94,10 +102,12 @@ const month = computed(() => {
 const chosenDayString = computed(() => {
 	return `${chosenDay.value.toLocaleString("en-us", {
 		weekday: "long",
-	})}, ${months[chosenDay.value.getMonth()]} ${chosenDay.value.getDate()}`;
+	})}, ${
+		months[chosenDay.value.getUTCMonth()]
+	} ${chosenDay.value.getUTCDate()}`;
 });
 const changeMonth = (v: number) => {
-	if (monthIndex.value + v < today.getMonth()) {
+	if (monthIndex.value + v < today.getUTCMonth()) {
 		return;
 	}
 	monthIndex.value = monthIndex.value + v;
@@ -114,7 +124,7 @@ const changeMonth = (v: number) => {
 };
 
 const getDaysForMonth = computed((): number => {
-	return new Date(year.value, monthIndex.value + 1, 0).getDate();
+	return new Date(year.value, monthIndex.value + 1, 0).getUTCDate();
 });
 const startOfTheMonthOffset = computed(() => {
 	let date = new Date(year.value, monthIndex.value, 1);
@@ -130,10 +140,14 @@ const monthArray = computed(() => {
 
 const showAvailableCells = (day: any) => {
 	const currentDate = new Date(year.value, monthIndex.value, day);
-	if (day == " " || currentDate <= today) {
+	const roundedDayDown = new Date(
+		today.getUTCFullYear(),
+		today.getUTCMonth(),
+		today.getUTCDate()
+	);
+	if (day == " " || currentDate.getTime() < roundedDayDown.getTime()) {
 		return "";
 	}
 	return "available-day";
 };
-const calendar = useCalendarStore();
 </script>

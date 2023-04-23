@@ -45,7 +45,9 @@ export const sessionConverter = {
 		snapshot: QueryDocumentSnapshot,
 		options: SnapshotOptions
 	): Session {
+		//@ts-ignore
 		const data: SessionDocumentData = snapshot.data(options);
+		const id = data.id || snapshot.id;
 		const {
 			appointmentDate,
 			languageOffering,
@@ -54,6 +56,7 @@ export const sessionConverter = {
 			userId,
 		} = data;
 		return {
+			id,
 			appointmentDate: appointmentDate?.toDate(),
 			languageOffering,
 			languageSeeking,
@@ -74,6 +77,7 @@ export const userConverter = {
 		snapshot: QueryDocumentSnapshot,
 		options: SnapshotOptions
 	): User {
+		//@ts-ignore
 		const data: UserDocumentData = snapshot.data(options);
 		const { uid, username } = data;
 		return {
@@ -102,7 +106,35 @@ export const getSessions = async (
 	const docs = await getDocs(q);
 	const temp: Session[] = [];
 	docs.forEach((doc) => {
-		temp.push(doc.data());
+		temp.push({ ...doc.data() });
+	});
+	return temp;
+};
+
+// write a unit test for this
+export const userHasMatchingSession = async (
+	firestore: Firestore,
+	userId: string,
+	offering: string,
+	seeking: string,
+	sessionTime: Date
+) => {
+	const fs = firestore;
+	const sessionRef = collection(
+		fs,
+		firebaseConsts.sessionCollection
+	).withConverter(sessionConverter);
+	const q = query(
+		sessionRef,
+		where("userId", "==", userId),
+		where("offering", "==", offering),
+		where("seeking", "==", seeking),
+		where("appointmentDate", "==", sessionTime)
+	);
+	const docs = await getDocs(q);
+	const temp: Session[] = [];
+	docs.forEach((doc) => {
+		temp.push({ ...doc.data() });
 	});
 	return temp;
 };
@@ -161,6 +193,7 @@ export const createOrGetUser = async (user: FirebaseUser) => {
 	const fs = useNuxtApp().$firestore;
 
 	const newUser: User = {
+		//@ts-ignore
 		username: user.displayName,
 		uid: user.uid,
 	};

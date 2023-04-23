@@ -28,16 +28,14 @@
 </template>
 
 <script setup lang="ts">
-import { useCalenderUIStore } from "@/stores/ui";
+import uniqid from "uniqid";
 import { useTempLanguageStore } from "~~/stores/temp/language";
 import { storeToRefs } from "pinia";
 import { Time } from "~~/utils/time";
-import { useNuxt } from "@nuxt/kit";
-import { Session } from "inspector";
-const fbAuth = useAuthState();
+import { Session } from "~~/stores/sessions";
+const fbAuth = useAuth();
 const languageChoice = useTempLanguageStore();
 const { languageOffering, languageSeeking } = storeToRefs(languageChoice);
-const calendarUi = useCalenderUIStore();
 const { addUpcomingSessions } = useSessionStore();
 const props = defineProps<{
 	chosenDayString: string;
@@ -60,12 +58,13 @@ const { setCalendarFlowState, setTempData } = calendarFlowUiStore;
 const confirmSelection = (time: Time) => {
 	const date = new Date(chosenDay.value);
 	date.setHours(time.hours, time.minutes);
-	const newSession = {
+	const newSession: Session = {
+		id: uniqid(),
 		languageOffering: languageOffering.value,
 		languageSeeking: languageSeeking.value,
 		appointmentDate: date,
 		peerName: null,
-		userId: fbAuth.uid.value,
+		userId: fbAuth.user.value.uid,
 	};
 	addUpcomingSessions(newSession);
 	resetButtonSelection();

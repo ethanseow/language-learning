@@ -81,6 +81,10 @@ import { SocketEmits } from "~~/backend-api/sockets";
 import { io } from "socket.io-client";
 import webRTC from "@/backend-api/webRTC";
 
+definePageMeta({
+	middleware: ["auth", "user-meetings"],
+});
+
 const route = useRoute();
 const peerConnection: Ref<RTCPeerConnection> = ref();
 const localUser: Ref<HTMLVideoElement> = ref();

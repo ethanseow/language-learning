@@ -5,6 +5,12 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+	middleware: ["auth"],
+	validate: () => {
+		return true;
+	},
+});
 const auth = useAuth();
 onMounted(async () => {
 	console.log("public", useRuntimeConfig().public);

@@ -17,11 +17,12 @@ export interface Session {
 	languageSeeking: string;
 	appointmentDate: Date;
 	peerName: string | null;
+	id: string;
 	readonly userId: string;
 }
 
 export const useSessionStore = defineStore("sessionStore", () => {
-	let pastSessions: Ref<Session[]> = ref([
+	let pastSessions: Ref<Session[]> = useState("pastSessions", () => [
 		/*
 		{
 			languageOffering: "Mandarin",
@@ -32,7 +33,7 @@ export const useSessionStore = defineStore("sessionStore", () => {
 		},
         */
 	]);
-	let upcomingSessions: Ref<Session[]> = ref([
+	let upcomingSessions: Ref<Session[]> = useState("upcomingSessions", () => [
 		/*
 		{
 			languageOffering: "Mandarin",

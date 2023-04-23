@@ -1,7 +1,7 @@
 <template>
 	<div class="w-full">
 		<span class="font-semibold text-2xl">
-			{{ usePastSession ? "Past Sessions" : "Upcoming Sessions" }}
+			{{ props.usePastSession ? "Past Sessions" : "Upcoming Sessions" }}
 		</span>
 		<div class="w-full h-[2px] bg-black"></div>
 		<table class="w-full text-black text-sm font-thin">
@@ -11,10 +11,14 @@
 				<th>Language Seeking</th>
 				<th>Peer</th>
 				<th>Peer Feedback</th>
-				<th v-if="!usePastSession">Meeting Room</th>
+				<th v-if="!props.usePastSession">Meeting Room</th>
 				<th v-else></th>
 			</tr>
-			<tr v-for="session in sortedSessions" class="bg-gray-400">
+			<tr
+				:key="session.id"
+				v-for="session in sortedSessions"
+				class="bg-gray-400"
+			>
 				<td>
 					<div>{{ getDateTimeString(session.appointmentDate) }}</div>
 				</td>
@@ -43,7 +47,7 @@
 				<td>
 					<NuxtLink
 						to="/accounts/123"
-						v-if="usePastSession"
+						v-if="props.usePastSession"
 						class="underline text-secondary underline-offset-2"
 					>
 						{{ session.peerName }}
@@ -52,14 +56,17 @@
 				</td>
 				<td>
 					<button
-						v-if="usePastSession"
+						v-if="props.usePastSession"
 						class="text-green-400 border-green-400 border-[2px] py-1 px-6 rounded-md"
 					>
 						View
 					</button>
 					<div v-else class="text-black font-thin">N/A</div>
 				</td>
-				<td v-if="!usePastSession" class="flex flex-row justify-center">
+				<td
+					v-if="!props.usePastSession"
+					class="flex flex-row justify-center"
+				>
 					<NuxtLink
 						v-if="true || allowMeetingRoom(session.appointmentDate)"
 						:to="`${urlConsts.MEETING}?offering=${session.languageOffering}&seeking=${session.languageSeeking}`"
@@ -101,13 +108,12 @@ import { type ComputedRef } from "vue";
 import { storeToRefs } from "pinia";
 import { Session } from "~~/stores/sessions";
 import { urlConsts } from "~~/constants/urlConsts";
-const { upcomingSessions, pastSessions } = storeToRefs(useSessionStore());
-const { usePastSession, sessions } = defineProps<{
+const props = defineProps<{
 	usePastSession: boolean | null;
 	sessions: Session[];
 }>();
 const sortedSessions = computed(() => {
-	return sessions.slice().sort((a, b) => {
+	return props.sessions.slice().sort((a, b) => {
 		return b.appointmentDate.getTime() - a.appointmentDate.getTime();
 	});
 });

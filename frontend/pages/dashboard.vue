@@ -13,7 +13,6 @@
 import { useCalenderUIStore } from "@/stores/ui";
 import { storeToRefs } from "pinia";
 const sessions = useSessionStore();
-onMounted(() => {});
 definePageMeta({
 	//middleware: ["auth"],
 });
