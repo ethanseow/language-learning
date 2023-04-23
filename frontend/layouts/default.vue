@@ -41,6 +41,7 @@ watch(auth.isLoggedIn, async (newIsLoggedIn, oldIsLoggedIn) => {
 		sessions.setUpcomingSessions(upcomingSessions);
 	}
 });
+/*
 const handler = async () => {
 	const nuxtApp = useNuxtApp();
 	await auth.initAuth();
@@ -57,5 +58,8 @@ const handler = async () => {
 	sessions.setPastSessions(pastSessions);
 	sessions.setUpcomingSessions(upcomingSessions);
 };
-await useAsyncData("initAuth", handler);
+if (process.server) {
+	await handler();
+}
+*/
 </script>
