@@ -8,13 +8,14 @@ import utils from "../../../../backend/src/utils/room";
 import { type JoinRoomReq } from "../../../../backend/src/sockets";
 describe("room utils for partner pairings", () => {
 	it("gets the true positive result for userHasRoom", () => {
-		const userId = [consts.TESTING_USERID];
+		const userId = consts.TESTING_USERID;
 
 		const userLookUp: Record<string, UserLookup> = {
 			[consts.TESTING_USERID]: {
 				roomId: consts.TESTING_ROOMID,
 				offering: consts.LANGUAGE_OFFERING,
 				seeking: consts.LANGUAGE_SEEKING,
+				hasLeftRoom: false,
 			},
 		};
 		expect(utils.userHasRoom(userId, userLookUp)).to.equal(true);
@@ -32,6 +33,7 @@ describe("room utils for partner pairings", () => {
 				roomId: consts.TESTING_ROOMID,
 				offering: consts.LANGUAGE_OFFERING,
 				seeking: consts.LANGUAGE_SEEKING,
+				hasLeftRoom: false,
 			},
 		};
 		const room = {
@@ -56,6 +58,7 @@ describe("room utils for partner pairings", () => {
 				roomId: consts.TESTING_ROOMID,
 				offering: consts.LANGUAGE_OFFERING,
 				seeking: consts.LANGUAGE_SEEKING,
+				hasLeftRoom: false,
 			},
 		};
 
@@ -91,6 +94,7 @@ describe("room utils for partner pairings", () => {
 				roomId: consts.TESTING_ROOMID,
 				offering: consts.LANGUAGE_OFFERING,
 				seeking: consts.LANGUAGE_SEEKING,
+				hasLeftRoom: false,
 			},
 		};
 		const ans = {
@@ -126,7 +130,11 @@ describe("room utils for partner pairings", () => {
 		]);
 	});
 	it("cannot find language candidate", () => {
-		const pool: Pool = { offering: {}, seeking: {} };
+		const pool: Pool = {
+			offering: {},
+			seeking: {},
+			usersInPool: new Set(),
+		};
 		const data: JoinRoomReq = {
 			offering: consts.LANGUAGE_SEEKING,
 			seeking: consts.LANGUAGE_OFFERING,
@@ -152,6 +160,7 @@ describe("room utils for partner pairings", () => {
 			offering: consts.LANGUAGE_OFFERING,
 			seeking: consts.LANGUAGE_SEEKING,
 			roomId: consts.TESTING_ROOMID,
+			hasLeftRoom: false,
 		};
 		const userId = consts.TESTING_USERID;
 		const userLookup = consts.TESTING_USERLOOKUP;

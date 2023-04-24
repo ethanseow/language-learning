@@ -13,10 +13,12 @@ export type UserPool = Record<string, SocketUser>;
 export type Pool = {
 	offering: Record<string, UserPool>;
 	seeking: Record<string, UserPool>;
+	usersInPool: Set<string>;
 };
 
 export interface UserLookup {
 	roomId: string;
 	offering: string;
 	seeking: string;
+	hasLeftRoom: boolean;
 }

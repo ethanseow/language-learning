@@ -49,10 +49,10 @@ const server = expressApp.server;
 const sessionMiddleware = expressApp.sessionMiddleware;
 let establishedRooms: Record<string, Room> = {};
 let reverseUserLookup: Record<string, UserLookup> = {};
-
 let pool: Pool = {
 	offering: {},
 	seeking: {},
+	usersInPool: new Set(),
 };
 
 declare module "express-session" {
@@ -69,7 +69,7 @@ declare module "http" {
 	}
 }
 
-const io = new Server(server, {
+export const io = new Server(server, {
 	cors: {
 		origin: consts.FRONTEND_URL,
 		credentials: true,
@@ -127,9 +127,9 @@ io.on("connection", (socket) => {
 			req.session.userId = userId;
 			req.session.save();
 		}
-		console.log("User joined", userId);
+		console.log("User joined uid:", userId);
 		if (utils.userHasRoom(userId, reverseUserLookup)) {
-			console.log("Joining Existing Room");
+			reverseUserLookup[userId].hasLeftRoom = false;
 			const room = utils.getRoomForUser(
 				userId,
 				reverseUserLookup,
@@ -141,11 +141,19 @@ io.on("connection", (socket) => {
 				guest: room.guest,
 			};
 			socket.join(room.id);
+			console.log("Joining Existing Room", room.id);
 			establishedRooms[room.id] = utils.incrementRoomUsers(room);
 			io.to(room.id).emit(SocketEmits.JOIN_ROOM, data);
 		} else {
+			if (utils.isUserInPool(userId, pool)) {
+				console.log(
+					"User is already in pool - cannot join two pools twice"
+				);
+				return;
+			}
 			const candidates = utils.findLanguageCandidates(pool, data);
 			if (candidates) {
+				console.log("Found compatible partner, placing in pool");
 				let randomRoomId =
 					String(Math.round(Math.random() * 1000000)) +
 					"_" +
@@ -173,10 +181,10 @@ io.on("connection", (socket) => {
 						offering: data.offering,
 						seeking: data.seeking,
 						roomId: randomRoomId,
+						hasLeftRoom: false,
 					}
 				);
 				reverseUserLookup[randomUser.userId].roomId = randomRoomId;
-				console.log("Other in-pool user", randomUser);
 				let s = await io.in(randomUser.socketId).fetchSockets();
 				if (s.length == 0) {
 					return;
@@ -195,6 +203,8 @@ io.on("connection", (socket) => {
 					guest: room.guest,
 				};
 				io.to(randomRoomId).emit(SocketEmits.JOIN_ROOM, sioData);
+				console.log("Offering after room creation", pool.offering);
+				console.log("Seeking after room creation", pool.seeking);
 			} else {
 				console.log("Room is unavailable, putting in pool");
 				const user: SocketUser = {
@@ -203,11 +213,6 @@ io.on("connection", (socket) => {
 				};
 
 				pool = utils.addToPool(pool, data.offering, data.seeking, user);
-				console.log(pool.offering);
-				console.log(
-					pool.seeking,
-					"seeking pool after user is added to pool"
-				);
 				reverseUserLookup = utils.addToLookUp(
 					reverseUserLookup,
 					userId,
@@ -215,14 +220,16 @@ io.on("connection", (socket) => {
 						offering: data.offering,
 						seeking: data.seeking,
 						roomId: null,
+						hasLeftRoom: false,
 					}
 				);
+				console.log("Offering after pool placement", pool.offering);
+				console.log("Seeking after pool placement", pool.seeking);
 			}
 		}
 	});
 
 	socket.on(SocketEmits.EMIT_ANSWER, (data: SendAnswerReq) => {
-		console.log("got answer");
 		const userId = req.session.userId;
 		if (!reverseUserLookup.hasOwnProperty(userId)) {
 			console.log(reverseUserLookup);
@@ -336,6 +343,9 @@ io.on("connection", (socket) => {
 			console.log("updated seeking pool", seekingPool);
 			return;
 		}
+
+		utils.userLeavesRoomLookUp(reverseUserLookup, userId);
+
 		const room = utils.getRoomForUser(
 			userId,
 			reverseUserLookup,

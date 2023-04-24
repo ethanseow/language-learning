@@ -9,9 +9,6 @@
 			<AccountDropdown v-if="auth.isLoggedIn.value" />
 			<div v-else @click="modal.openModal">Login</div>
 		</div>
-		<div>
-			{{ auth.user.value.uid }}
-		</div>
 	</div>
 </template>
 

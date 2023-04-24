@@ -4,17 +4,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 		const auth = useAuth();
 		const nuxtApp = useNuxtApp();
 		await auth.initAuth();
-		const upcomingSessions = await getSessions(
-			nuxtApp.$firestore,
-			false,
-			auth.user.value.uid
-		);
-		const pastSessions = await getSessions(
-			nuxtApp.$firestore,
-			true,
-			auth.user.value.uid
-		);
-		sessions.setPastSessions(pastSessions);
-		sessions.setUpcomingSessions(upcomingSessions);
+		if (auth.user?.value?.uid) {
+			const upcomingSessions = await getSessions(
+				nuxtApp.$firestore,
+				false,
+				auth.user.value.uid
+			);
+			const pastSessions = await getSessions(
+				nuxtApp.$firestore,
+				true,
+				auth.user.value.uid
+			);
+			sessions.setPastSessions(pastSessions);
+			sessions.setUpcomingSessions(upcomingSessions);
+		}
 	}
 });
