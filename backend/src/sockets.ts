@@ -9,6 +9,7 @@ export enum SocketEmits {
 	GET_ALL_MESSAGES = "getAllMessages",
 	SEND_MESSAGE = "sendMessage",
 	SHARE_SCREEN = "shareScreen",
+	CREATED_ROOM = "createdRoom",
 }
 
 export enum SocketNamespaces {
@@ -29,11 +30,9 @@ export type Message = {
 	data: string;
 };
 
-export interface JoinedRoomReq {
+export type JoinedRoomReq = {
 	roomId: string;
-	host: string;
-	guest: string;
-}
+};
 export interface PartnerJoinedReq {
 	partnerUserId: string;
 }

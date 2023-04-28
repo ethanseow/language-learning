@@ -91,6 +91,7 @@ const localUser: Ref<HTMLVideoElement> = ref();
 const remoteUser: Ref<HTMLVideoElement> = ref();
 const localStream: Ref<MediaStream> = ref();
 const remoteStream: Ref<MediaStream> = ref();
+
 const partnerId: Ref<string> = ref(null);
 const socketState = ref(false);
 
@@ -98,7 +99,6 @@ const message = ref("");
 const sendMessage = () => {
 	if (socket.active) {
 		const data: Message = {
-			id: crypto.randomUUID(),
 			data: message.value,
 			ownerId: userId.value,
 			timestamp: new Date(),
@@ -149,23 +149,7 @@ const socket = io(apiBase, {
 });
 
 onMounted(async () => {
-	console.log(
-		"Seeking",
-		route.query.seeking,
-		"Offering",
-		route.query.offering
-	);
-	if (!userId.value) {
-		userId.value =
-			String(Math.round(Math.random() * 10000)) +
-			"_" +
-			String(Math.round(Math.random() * 10000));
-		useAccountStore().setUserId(userId.value);
-	}
-	if (route.query.seeking && route.query.offering) {
-		// await rtcInit();
-		socketInit();
-	}
+	socketInit();
 });
 
 let constraints = {
@@ -253,11 +237,18 @@ const endMeeting = () => {
 
 const socketInit = () => {
 	const data: JoinRoomReq = {
+		// you can have this be sent as cookie or auth header
 		userId: useAuth().user.value.uid,
+		//@ts-ignore
 		offering: route.query.offering,
+		//@ts-ignore
 		seeking: route.query.seeking,
 	};
+
 	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
+
+	socket.on(SocketEmits.CREATED_ROOM, async (data: JoinedRoomReq) => {});
+
 	socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
 		await startConnection();
 		roomId.value = data.roomId;
