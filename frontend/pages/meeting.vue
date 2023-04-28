@@ -1,7 +1,7 @@
 <template>
 	<div class="flex flex-row justify-start p-2">
 		<div
-			v-if="socketState == false && roomId == null"
+			v-if="!isFullyConnected"
 			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
 		>
 			<p class="text-xl">Finding Available Partners</p>
@@ -9,7 +9,7 @@
 		</div>
 		<div class="text-black flex flex-col items-center">
 			<div>Meeting Room</div>
-			<h1>Room: {{ roomId !== "NULL" ? roomId : "WAITING" }}</h1>
+			<h1>Room: {{ roomId }}}}</h1>
 			<div id="videos">
 				<video
 					class="video-player"
@@ -19,12 +19,12 @@
 				></video>
 				<div
 					class="video-player flex flex-col justify-center items-center"
-					v-show="socketState == false && roomId != null"
+					v-show="!isPartnerConnected"
 				>
 					<p>User Disconnected</p>
 					<p>Waiting For User</p>
 				</div>
-				<div class="video-player" v-show="socketState == true">
+				<div class="video-player" v-show="isPartnerConnected">
 					<video
 						class="w-full h-full"
 						autoplay
@@ -33,13 +33,11 @@
 					></video>
 				</div>
 			</div>
+		</div>
+		<!--
 			<button class="p-4 bg-blue-600" @click="endMeeting">
 				End Meeting
 			</button>
-			<h1 class="text-black">
-				{{ connectionStateText }}
-			</h1>
-		</div>
 		<div class="flex flex-col w-full">
 			<div class="grow bg-slate-500 h-[90%]">
 				<Message
@@ -60,6 +58,7 @@
 				</button>
 			</div>
 		</div>
+        -->
 	</div>
 </template>
 
@@ -78,71 +77,121 @@ import {
 } from "@/backend-api/sockets";
 import { useAccountStore } from "@/stores/account";
 import { SocketEmits } from "~~/backend-api/sockets";
-import { io } from "socket.io-client";
+import { Socket, io } from "socket.io-client";
 import webRTC from "@/backend-api/webRTC";
 
 definePageMeta({
-	middleware: ["auth", "user-meetings"],
+	//middleware: ["auth", "user-meetings"],
+	middleware: ["auth"],
 });
 
-const route = useRoute();
+//@ts-ignore
 const peerConnection: Ref<RTCPeerConnection> = ref();
+//@ts-ignore
 const localUser: Ref<HTMLVideoElement> = ref();
+//@ts-ignore
 const remoteUser: Ref<HTMLVideoElement> = ref();
+//@ts-ignore
 const localStream: Ref<MediaStream> = ref();
+//@ts-ignore
 const remoteStream: Ref<MediaStream> = ref();
 
-const partnerId: Ref<string> = ref(null);
-const socketState = ref(false);
-
-const message = ref("");
-const sendMessage = () => {
-	if (socket.active) {
-		const data: Message = {
-			data: message.value,
-			ownerId: userId.value,
-			timestamp: new Date(),
-		};
-		allMessages.value.push(data);
-		socket.emit(SocketEmits.SEND_MESSAGE, data);
-	}
+const RTCConnectionState = ref("");
+const setRTCConnectionState = (state: string) => {
+	RTCConnectionState.value = state;
 };
 
-const connectionState: Ref<RTCIceConnectionState> = ref("closed");
-const connectionStateText = computed(() => {
-	if (connectionState.value) {
-		switch (connectionState.value) {
-			case "checking":
-				return "Checking";
-			case "completed":
-				return "Completed";
-			case "closed":
-				return "Closed";
-				break;
-			case "connected":
-				return "Connected";
-				break;
-			case "failed":
-				return "Failed";
-				break;
-			case "new":
-				return "New";
-				break;
-			case "disconnected":
-				return "Disconnected";
-				break;
-			default:
-				return "Unknown";
-		}
-	} else {
-		return "Unestablished";
+const RTCSignalingState = ref("");
+const setRTCSignalingState = (state: string) => {
+	RTCSignalingState.value = state;
+};
+
+const isFullyConnected = computed(() => {
+	if (isFullyConnected.value) {
+		return true;
 	}
+	if (
+		RTCConnectionState.value == "connected" &&
+		RTCSignalingState.value == "stable"
+	) {
+		return true;
+	}
+	return false;
 });
 
+const isPartnerConnected = computed(() => {
+	if (isFullyConnected.value) {
+		if (RTCConnectionState.value == "connected") {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	return false;
+});
+
+const polite = ref(null);
+const makingOffer = ref(false);
+
+const initRTCEventHandlers = async () => {
+	peerConnection.value.onsignalingstatechange = (e) => {
+		switch (peerConnection.value.signalingState) {
+			case "stable":
+				setRTCSignalingState("stable");
+				break;
+			default:
+				break;
+		}
+	};
+	peerConnection.value.onconnectionstatechange = (e) => {
+		switch (peerConnection.value.connectionState) {
+			case "new":
+				setRTCConnectionState("new");
+				break;
+			case "connecting":
+				setRTCConnectionState("connecting");
+				break;
+			case "connected":
+				setRTCConnectionState("connected");
+				break;
+			case "disconnected":
+				setRTCConnectionState("disconnected");
+				break;
+			case "closed":
+				setRTCConnectionState("closed");
+				break;
+			case "failed":
+				setRTCConnectionState("failed");
+				break;
+			default:
+				break;
+		}
+	};
+	peerConnection.value.oniceconnectionstatechange = () => {
+		if (peerConnection.value.iceConnectionState === "failed") {
+			peerConnection.value.restartIce();
+		}
+	};
+	peerConnection.value.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+		if (e.candidate) {
+			const data: CandidateFoundReq = {
+				candidate: e.candidate,
+			};
+			socket.emit(SocketEmits.EMIT_CANDIDATE, data);
+			socket.emit(SocketEmits.EMIT_CANDIDATE, e);
+		}
+	};
+	peerConnection.value.ontrack = (event: RTCTrackEvent) => {
+		console.log("track is added");
+		event.streams[0].getTracks().forEach((track) => {
+			//console.log(track);
+			remoteStream.value.addTrack(track);
+		});
+	};
+};
+
 const roomId = ref(null);
-const userId = useCookie("userId");
 const apiBase = useRuntimeConfig().public.apiBase;
-const allMessages: Ref<Message[]> = ref([]);
 
 const socket = io(apiBase, {
 	withCredentials: true,
@@ -159,6 +208,8 @@ let constraints = {
 	},
 	audio: true,
 };
+
+/*
 const rtcInit = async () => {
 	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
 	localUser.value.srcObject = localStream.value;
@@ -234,60 +285,90 @@ const endMeeting = () => {
 	peerConnection.value.close();
 	remoteUser.value.srcObject = null;
 };
+*/
 
-const socketInit = () => {
+const socketInit = async () => {
 	const data: JoinRoomReq = {
 		// you can have this be sent as cookie or auth header
 		userId: useAuth().user.value.uid,
 		//@ts-ignore
-		offering: route.query.offering,
+		offering: useRoute().query.offering,
 		//@ts-ignore
-		seeking: route.query.seeking,
+		seeking: useRoute().query.seeking,
 	};
+
+	localStream.value = await navigator.mediaDevices.getUserMedia(constraints);
+	localUser.value.srcObject = localStream.value;
+	// console.log("before my peerconnection", peerConnection.value);
+	peerConnection.value = new RTCPeerConnection(webRTC.servers);
+	// console.log("after my peerconnection", peerConnection.value);
+	remoteStream.value = new MediaStream();
+	remoteUser.value.srcObject = remoteStream.value;
+	localStream.value.getTracks().forEach((track) => {
+		peerConnection.value.addTrack(track, localStream.value);
+	});
+
+	initRTCEventHandlers();
 
 	socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 
-	socket.on(SocketEmits.CREATED_ROOM, async (data: JoinedRoomReq) => {});
+	socket.on(SocketEmits.CREATED_ROOM, async (data: JoinedRoomReq) => {
+		//@ts-ignore
+		polite.value = data.isPolite;
+		createOffer();
+	});
 
-	socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
-		await startConnection();
-		roomId.value = data.roomId;
-		if (userId.value == data.host) {
-			partnerId.value = data.guest;
-			console.log("I am the host");
-			console.log("creating offer");
-			createOffer();
-		} else {
-			loadAllMessages();
-			console.log("I am the guest");
-			partnerId.value = data.guest;
-		}
-		socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
-			console.log("Got ice candidate");
-			if (peerConnection.value) {
-				console.log("Adding ice candidate");
-				peerConnection.value.addIceCandidate(data.candidate);
-			}
-		});
-		socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
-			console.log("Accepting offer");
-			acceptOffer(data.offer);
-		});
-		socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
-			console.log("Accepting answer");
-			acceptAnswer(data.answer);
-		});
-		socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
-			stopConnection();
-		});
-		socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
-			console.log("Previous allMessage", allMessages.value);
-			allMessages.value.push(message);
-			console.log("Appended allMessage", allMessages.value);
+	socket.on(SocketEmits.ASK_POLITENESS, async () => {
+		socket.emit(SocketEmits.ASK_POLITENESS, {
+			myPolite: polite.value,
 		});
 	});
+
+	socket.on(SocketEmits.REJOIN_ROOM, async (data: JoinedRoomReq) => {
+		//@ts-ignore
+		polite.value = data.isPolite;
+		createOffer();
+	});
+	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
+		console.log("Got ice candidate");
+		if (peerConnection.value) {
+			console.log("Adding ice candidate");
+			peerConnection.value.addIceCandidate(data.candidate);
+		}
+	});
+	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
+		console.log("received an offer");
+		const offeringRightNow =
+			peerConnection.value.signalingState !== "stable" &&
+			makingOffer.value;
+		const denyOffer = polite.value == false && offeringRightNow;
+		console.log("denyOffer", denyOffer);
+		console.log("offeringRightNow", offeringRightNow);
+		if (denyOffer) {
+			console.log("Denied Offer");
+			return;
+		}
+		makingOffer.value = false;
+		console.log("Accepted Offer");
+		acceptOffer(data.offer);
+	});
+	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
+		console.log("Accepting answer");
+		acceptAnswer(data.answer);
+	});
+	/*
+	socket.on(SocketEmits.PARTNER_DISCONNECTED, () => {
+		stopConnection();
+	});
+    */
 };
 
+/*
+	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
+		console.log("Previous allMessage", allMessages.value);
+		allMessages.value.push(message);
+		console.log("Appended allMessage", allMessages.value);
+	});
 const loadAllMessages = async () => {
 	socket.emit(
 		SocketEmits.GET_ALL_MESSAGES,
@@ -304,37 +385,40 @@ const loadAllMessages = async () => {
 		}
 	);
 };
+*/
 
 const createOffer = async () => {
-	let offer = await peerConnection.value.createOffer();
-	await peerConnection.value.setLocalDescription(offer);
+	makingOffer.value = true;
+	await peerConnection.value.setLocalDescription();
 	const data: SendOfferReq = {
-		offer,
+		//@ts-ignore
+		offer: peerConnection.value.localDescription,
 	};
 	socket.emit(SocketEmits.EMIT_OFFER, data);
 };
 
 const acceptOffer = async (offer: RTCSessionDescriptionInit) => {
-	console.log("");
+	makingOffer.value = false;
 	console.log("at accept offer function");
-	console.log("my peerconnection", peerConnection.value);
 	await peerConnection.value.setRemoteDescription(offer);
 
-	let answer = await peerConnection.value.createAnswer();
-	await peerConnection.value.setLocalDescription(answer);
-	console.log("setting local description");
+	// let answer = await peerConnection.value.createAnswer();
+	await peerConnection.value.setLocalDescription();
+	console.log("setting answer local description");
 
 	let data: SendAnswerReq = {
-		answer,
+		//@ts-ignore
+		answer: peerConnection.value.localDescription,
 	};
-	console.log("emitting socket");
+	console.log("emitting answer");
 	socket.emit(SocketEmits.EMIT_ANSWER, data);
 };
 
 const acceptAnswer = async (answer: RTCSessionDescriptionInit) => {
 	if (!peerConnection.value.currentRemoteDescription) {
-		console.log("fully connected");
+		console.log("accepted answer");
 		peerConnection.value.setRemoteDescription(answer);
+		makingOffer.value = false;
 	}
 };
 </script>

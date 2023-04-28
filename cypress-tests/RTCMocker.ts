@@ -8,17 +8,14 @@ import {
 	type CandidateFoundReq,
 	type SendOfferReq,
 	type SendAnswerReq,
-	type Message,
-	SocketNamespaces,
 } from "../frontend/backend-api/sockets";
 import consts from "./consts";
-import test from "./test";
 const servers = {
 	iceServers: [
 		{
 			urls: [
 				"stun:stun1.l.google.com:19302",
-				//"stun:stun2.l.google.com:19302",
+				"stun:stun2.l.google.com:19302",
 			],
 		},
 	],
@@ -30,34 +27,36 @@ export class RTCMocker {
 	offering: string;
 	seeking: string;
 	partnerId: string | null;
-	constructor() {
+	polite: boolean;
+	makingOffer: boolean;
+	constructor(offering: string, seeking: string) {
 		this.userId = "" + Math.random() * 100000;
-		this.offering = consts.LANGUAGE_OFFERING;
-		this.seeking = consts.LANGUAGE_SEEKING;
+		this.offering = offering;
+		this.seeking = seeking;
 		this.socket = io(consts.SOCKET_API_BASE, {
 			withCredentials: true,
 		});
-		this.partnerId = null;
 		this.peerConnection = new wrtc.RTCPeerConnection(servers);
-
-		this.peerConnection.onicecandidate = (
-			event: RTCPeerConnectionIceEvent
-		) => {
-			if (event.candidate) {
-				const data: CandidateFoundReq = {
-					candidate: event.candidate,
-				};
-				this.socket.emit(SocketEmits.EMIT_CANDIDATE, data);
-			}
-		};
-		this.socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
-			if (this.userId == data.host) {
-				this.partnerId = data.guest;
+		this.makingOffer = false;
+		this.socket.on(
+			SocketEmits.CREATED_ROOM,
+			async (data: JoinedRoomReq) => {
+				//@ts-ignore
+				this.polite.value = data.isPolite;
 				this.createOffer();
-			} else {
-				// this.loadAllMessages();
-				this.partnerId = data.guest;
 			}
+		);
+
+		this.socket.on(SocketEmits.ASK_POLITENESS, async () => {
+			this.socket.emit(SocketEmits.ASK_POLITENESS, {
+				myPolite: this.polite,
+			});
+		});
+
+		this.socket.on(SocketEmits.REJOIN_ROOM, async (data: JoinedRoomReq) => {
+			//@ts-ignore
+			this.polite.value = data.isPolite;
+			this.createOffer();
 		});
 		this.socket.on(
 			SocketEmits.EMIT_CANDIDATE,
@@ -70,7 +69,18 @@ export class RTCMocker {
 			}
 		);
 		this.socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
-			console.log("Accepting offer");
+			console.log("received an offer");
+			const offeringRightNow =
+				this.peerConnection.signalingState !== "stable" &&
+				this.makingOffer;
+			const denyOffer = this.polite == false && offeringRightNow;
+			console.log("denyOffer", denyOffer);
+			console.log("offeringRightNow", offeringRightNow);
+			if (denyOffer) {
+				console.log("Denied Offer");
+				return;
+			}
+			console.log("Accepted Offer");
 			this.acceptOffer(data.offer);
 		});
 		this.socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
@@ -78,30 +88,39 @@ export class RTCMocker {
 			this.acceptAnswer(data.answer);
 		});
 	}
-	private async createOffer() {
-		let offer = await this.peerConnection.createOffer();
-		await this.peerConnection.setLocalDescription(offer);
+	acceptAnswer = async (answer: RTCSessionDescriptionInit) => {
+		if (!this.peerConnection.currentRemoteDescription) {
+			console.log("accepted answer");
+			this.peerConnection.setRemoteDescription(answer);
+			this.makingOffer = false;
+		}
+	};
+	createOffer = async () => {
+		this.makingOffer = true;
+		await this.peerConnection.setLocalDescription();
 		const data: SendOfferReq = {
-			offer,
+			//@ts-ignore
+			offer: this.peerConnection.localDescription,
 		};
 		this.socket.emit(SocketEmits.EMIT_OFFER, data);
-	}
-	private async acceptOffer(offer: RTCSessionDescriptionInit) {
+	};
+
+	acceptOffer = async (offer: RTCSessionDescriptionInit) => {
+		this.makingOffer = false;
+		console.log("at accept offer function");
 		await this.peerConnection.setRemoteDescription(offer);
 
-		let answer = await this.peerConnection.createAnswer();
-		await this.peerConnection.setLocalDescription(answer);
+		// let answer = await this.peerConnection.this.createAnswer();
+		await this.peerConnection.setLocalDescription();
+		console.log("setting answer local description");
 
 		let data: SendAnswerReq = {
-			answer,
+			//@ts-ignore
+			answer: this.peerConnection.localDescription,
 		};
+		console.log("emitting answer");
 		this.socket.emit(SocketEmits.EMIT_ANSWER, data);
-	}
-	private async acceptAnswer(answer: RTCSessionDescriptionInit) {
-		if (!this.peerConnection.currentRemoteDescription) {
-			this.peerConnection.setRemoteDescription(answer);
-		}
-	}
+	};
 	waitForRoom() {
 		const data: JoinRoomReq = {
 			userId: this.userId,

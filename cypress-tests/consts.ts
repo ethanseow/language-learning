@@ -1,7 +1,7 @@
 import { type Pool, type Room, type UserLookup } from "../backend/src/types";
 import { type JoinRoomReq } from "../backend/src/sockets";
-const LANGUAGE_SEEKING = "seeking";
-const LANGUAGE_OFFERING = "offering";
+const LANGUAGE_SEEKING = "English";
+const LANGUAGE_OFFERING = "Mandarin";
 const TESTING_USERID = "I am a userid";
 const TESTING_ROOMID = "This is a room id";
 const TESTING_SOCKETID = "This is my socket id";

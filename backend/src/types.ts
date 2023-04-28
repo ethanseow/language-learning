@@ -1,9 +1,9 @@
 import { type Message, type SocketUser } from "./sockets";
 
-export type RoomUser = {
-	userId: string;
-	isActive: boolean;
-};
+export type RoomUser =
+	| {
+			isActive: boolean;
+	  } & User;
 
 export type Room = {
 	id: string;
@@ -16,6 +16,7 @@ export type Rooms = {
 	establishedRooms: Record<string, Room>;
 	roomLookup: Record<string, Room>;
 	createRoom: (user1: User, user2: User) => Room;
+	findOtherUserInRoom: (user: string) => User | null;
 	rejoinRoom: (user: User) => Room | null;
 	leaveRoom: (user: string) => Room | null;
 	closeRoom: (roomId: string) => Room | null;
@@ -25,7 +26,7 @@ export type Rooms = {
 export type User = {
 	offering: string;
 	seeking: string;
-	userid: string;
+	userId: string;
 	socketId: string;
 };
 

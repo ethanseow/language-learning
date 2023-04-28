@@ -10,6 +10,17 @@ export const rooms: Rooms = {
 		}
 		return null;
 	},
+	findOtherUserInRoom: (user: string) => {
+		const room = rooms.findRoomForUser(user);
+		if (room) {
+			Object.keys(room.users).forEach((key) => {
+				if (key != user) {
+					return room.users[key];
+				}
+			});
+		}
+		return null;
+	},
 	createRoom: (user1: User, user2: User) => {
 		let randomRoomId =
 			String(Math.round(Math.random() * 1000000)) +
@@ -20,32 +31,32 @@ export const rooms: Rooms = {
 			numInRoom: 2,
 			id: randomRoomId,
 			users: {
-				[user1.userid]: {
-					userId: user1.userid,
+				[user1.userId]: {
+					...user1,
 					isActive: true,
 				},
-				[user2.userid]: {
-					userId: user2.userid,
+				[user2.userId]: {
+					...user2,
 					isActive: true,
 				},
 			},
 			messages: [],
 		};
-		rooms.roomLookup[user1.userid] = room;
-		rooms.roomLookup[user2.userid] = room;
+		rooms.roomLookup[user1.userId] = room;
+		rooms.roomLookup[user2.userId] = room;
 		rooms.establishedRooms[randomRoomId] = room;
 		return { ...room };
 	},
 	rejoinRoom: (user: User) => {
-		const room = rooms.findRoomForUser(user.userid);
+		const room = rooms.findRoomForUser(user.userId);
 		if (room) {
 			// actual room by reference
 			const referencedRoom = rooms.establishedRooms[room.id];
-			if (referencedRoom.users[user.userid].isActive) {
+			if (referencedRoom.users[user.userId].isActive) {
 				return null;
 			}
 			referencedRoom.numInRoom += 1;
-			referencedRoom.users[user.userid].isActive = true;
+			referencedRoom.users[user.userId].isActive = true;
 			return room;
 		} else {
 			return null;

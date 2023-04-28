@@ -102,78 +102,69 @@ io.on("connection", (socket) => {
 		const user: User = {
 			offering: data.offering,
 			seeking: data.seeking,
-			userid: data.userId,
+			userId: data.userId,
 			socketId: socket.id,
 		};
 		const $pool = pool.findUserInPool(userId);
 		const $room = rooms.findRoomForUser(userId);
 		if ($pool) {
-			return;
 		} else if ($room) {
 			if (!$room.users[userId].isActive) {
 				rooms.rejoinRoom(user);
-				// tell to rejoin socket
+				const otherSocket = rooms.findOtherUserInRoom(userId);
+				io.to(otherSocket.socketId).emit(
+					SocketEmits.ASK_POLITENESS,
+					{},
+					(isPolite: boolean) => {
+						const data: JoinedRoomReq = {
+							roomId: $room.id,
+							isPolite: !isPolite,
+						};
+						io.to(socket.id).emit(SocketEmits.CREATED_ROOM, data);
+					}
+				);
 			}
 		} else if (!$pool) {
 			pool.addToPool(user);
 		} else if (!$room) {
 			const otherUser = pool.getCompatibleUser(user);
 			if (otherUser) {
-				pool.removeFromPool(otherUser.userid);
+				pool.removeFromPool(otherUser.userId);
 				const room = rooms.createRoom(otherUser, user);
 				const otherSocket = io.sockets.sockets.get(otherUser.socketId);
 				const mySocket = socket;
 				otherSocket.join(room.id);
 				mySocket.join(room.id);
+				io.to(otherSocket.id).emit(SocketEmits.CREATED_ROOM, {
+					roomId: room.id,
+					isPolite: false,
+				});
+				io.to(socket.id).emit(SocketEmits.CREATED_ROOM, {
+					roomId: room.id,
+					isPolite: true,
+				});
 			}
 		}
+		console.log(pool);
 	});
 
 	socket.on(SocketEmits.EMIT_ANSWER, (data: SendAnswerReq) => {
 		const userId = req.session.userId;
-		if (!reverseUserLookup.hasOwnProperty(userId)) {
-			console.log(reverseUserLookup);
-			console.log(userId);
-			return;
-		}
-
-		const room = utils.getRoomForUser(
-			userId,
-			reverseUserLookup,
-			establishedRooms
-		);
-		socket.broadcast.to(room.id).emit(SocketEmits.EMIT_ANSWER, data);
+		const $room = rooms.findRoomForUser(userId);
+		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
 		console.log("got candidate");
 		const userId = req.session.userId;
-		if (!reverseUserLookup.hasOwnProperty(userId)) {
-			console.log(reverseUserLookup);
-			console.log(userId);
-			return;
-		}
-		const room = utils.getRoomForUser(
-			userId,
-			reverseUserLookup,
-			establishedRooms
-		);
-		socket.broadcast.to(room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
+		const $room = rooms.findRoomForUser(userId);
+		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
 	});
 	socket.on(SocketEmits.EMIT_OFFER, (data: SendOfferReq) => {
 		const userId = req.session.userId;
-		if (!reverseUserLookup.hasOwnProperty(userId)) {
-			console.log(reverseUserLookup);
-			console.log(userId);
-			return;
-		}
-		console.log("Recevied offer from", socket.id);
-		const room = utils.getRoomForUser(
-			userId,
-			reverseUserLookup,
-			establishedRooms
-		);
-		socket.broadcast.to(room.id).emit(SocketEmits.EMIT_OFFER, data);
+		const $room = rooms.findRoomForUser(userId);
+		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_OFFER, data);
 	});
+	/*
 	socket.on(SocketEmits.GET_ALL_MESSAGES, (emptyArg, callback) => {
 		const userId = req.session.userId;
 		if (!utils.userHasRoom(userId, reverseUserLookup)) {
@@ -210,6 +201,7 @@ io.on("connection", (socket) => {
 		room.messages.push(message);
 		socket.broadcast.to(room.id).emit(SocketEmits.SEND_MESSAGE, message);
 	});
+    */
 	socket.on("disconnecting", () => {
 		console.log("disconnecting");
 		const userId = req.session.userId;

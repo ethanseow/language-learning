@@ -10,6 +10,8 @@ export enum SocketEmits {
 	SEND_MESSAGE = "sendMessage",
 	SHARE_SCREEN = "shareScreen",
 	CREATED_ROOM = "createdRoom",
+	ASK_POLITENESS = "askPoliteness",
+	REJOIN_ROOM = "rejoinRoom",
 }
 export enum SocketNamespaces {
 	WEB_RTC = "/webRtc",
@@ -34,10 +36,16 @@ export interface GetAllMessagesRes {
 
 export type JoinedRoomReq = {
 	roomId: string;
+	isPolite: boolean;
 };
 export interface PartnerJoinedReq {
-	partnerUserId: string;
+	isPolite: boolean;
 }
+
+export interface AskForPoliteness {
+	myPolite: boolean | null;
+}
+
 export interface CandidateFoundReq {
 	candidate: RTCIceCandidate;
 }

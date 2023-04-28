@@ -9,23 +9,23 @@ export const pool: Pool = {
 		const seeking = user.seeking;
 		pool.userLookup = {
 			...pool.userLookup,
-			[user.userid]: user,
+			[user.userId]: user,
 		};
 		pool.offering[offering] = {
 			...pool.offering[offering],
-			[user.userid]: user,
+			[user.userId]: user,
 		};
 		pool.seeking[seeking] = {
 			...pool.seeking[seeking],
-			[user.userid]: user,
+			[user.userId]: user,
 		};
 		return user;
 	},
 	removeFromPool: (userId: string) => {
 		const user = pool.findUserInPool(userId);
 		if (user) {
-			delete pool.offering[user.offering][user.userid];
-			delete pool.seeking[user.seeking][user.userid];
+			delete pool.offering[user.offering][user.userId];
+			delete pool.seeking[user.seeking][user.userId];
 			delete pool.userLookup[userId];
 			return user;
 		} else {

@@ -36,10 +36,24 @@ export default defineConfig({
 		appId: process.env.NUXT_PUBLIC_APP_ID,
 		messagingSenderId: process.env.NUXT_PUBLIC_MESSAGING_SENDER_ID,
 		measurementId: process.env.NUXT_PUBLIC_MEASUREMENT_ID,
+		browserPermissions: {
+			notifications: "allow",
+			geolocation: "allow",
+			camera: "allow",
+			microphone: "allow",
+			images: "allow",
+			javascript: "allow",
+			popups: "ask",
+			plugins: "ask",
+			cookies: "allow",
+		},
 	},
 	e2e: {
 		setupNodeEvents(on, config) {
-			let mocker = new RTCMocker();
+			let mocker = new RTCMocker(
+				consts.LANGUAGE_SEEKING,
+				consts.LANGUAGE_OFFERING
+			);
 			/*
 			socket.on(SocketEmits.JOIN_ROOM, async (data: JoinedRoomReq) => {
 				startConnection();
