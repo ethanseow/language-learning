@@ -1,6 +1,6 @@
 import { Room, Rooms, User } from "@/types";
 import * as _ from "lodash";
-export const rooms: Rooms = {
+const rooms: Rooms = {
 	establishedRooms: {},
 	roomLookup: {},
 	findRoomForUser: (user: string) => {
@@ -90,4 +90,8 @@ export const rooms: Rooms = {
 			return null;
 		}
 	},
+};
+
+export default {
+	rooms,
 };

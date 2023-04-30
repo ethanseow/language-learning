@@ -13,20 +13,24 @@ import {
 	SocketUser,
 	SocketNamespaces,
 	type Message,
-} from "./sockets";
-import { type Room, type Pool, type UserLookup, UserPool, User } from "./types";
-import utils from "./utils/room";
+} from "./sockets.js";
+import {
+	type Room,
+	type Pool,
+	type UserLookup,
+	UserPool,
+	User,
+} from "./types.js";
 import { Server, Socket } from "socket.io";
-import consts from "./consts";
+import consts from "./consts.js";
 import * as _ from "lodash";
-import { SocketEmits } from "./sockets";
+import { SocketEmits } from "./sockets.js";
 import session, { Session, SessionOptions, Store } from "express-session";
 import type { IncomingHttpHeaders, IncomingMessage } from "http";
 import { app as firebaseApp, analytics } from "@/firebase";
-import { pool } from "./utils/Pool";
-import { rooms } from "./utils/Rooms";
-import { sockets } from "./utils/Sockets";
-import expressApp from "./api/app";
+import pool from "./redis/pool.js";
+import rooms from "./redis/room.js";
+import expressApp from "./api/app.js";
 const app = expressApp.app;
 const server = expressApp.server;
 const sessionMiddleware = expressApp.sessionMiddleware;
@@ -87,6 +91,7 @@ io.engine.on("initial_headers", (headers, req) => {
 });
 
 io.on("connection", (socket) => {
+	console.log("connected", socket.id);
 	const req = socket.request;
 	socket.use((__, next) => {
 		req.session.reload((err) => {
@@ -105,13 +110,14 @@ io.on("connection", (socket) => {
 			userId: data.userId,
 			socketId: socket.id,
 		};
-		const $pool = pool.findUserInPool(userId);
-		const $room = rooms.findRoomForUser(userId);
+		console.log("user", user);
+		const $pool = await pool.findUserInPool(userId);
+		const $room = await rooms.findRoomForUser(userId);
 		if ($pool) {
 		} else if ($room) {
 			if (!$room.users[userId].isActive) {
-				rooms.rejoinRoom(user);
-				const otherSocket = rooms.findOtherUserInRoom(userId);
+				await rooms.rejoinRoom(userId);
+				const otherSocket = await rooms.findOtherUserInRoom(userId);
 				io.to(otherSocket.socketId).emit(
 					SocketEmits.ASK_POLITENESS,
 					{},
@@ -125,12 +131,12 @@ io.on("connection", (socket) => {
 				);
 			}
 		} else if (!$pool) {
-			pool.addToPool(user);
+			await pool.addToPool(user);
 		} else if (!$room) {
-			const otherUser = pool.getCompatibleUser(user);
+			const otherUser = await pool.getCompatibleUser(user);
 			if (otherUser) {
-				pool.removeFromPool(otherUser.userId);
-				const room = rooms.createRoom(otherUser, user);
+				await pool.removeFromPool(otherUser.userId);
+				const room = await rooms.createRoom(otherUser, user);
 				const otherSocket = io.sockets.sockets.get(otherUser.socketId);
 				const mySocket = socket;
 				otherSocket.join(room.id);
@@ -145,23 +151,22 @@ io.on("connection", (socket) => {
 				});
 			}
 		}
-		console.log(pool);
 	});
 
-	socket.on(SocketEmits.EMIT_ANSWER, (data: SendAnswerReq) => {
+	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		const userId = req.session.userId;
-		const $room = rooms.findRoomForUser(userId);
+		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
-	socket.on(SocketEmits.EMIT_CANDIDATE, (data: CandidateFoundReq) => {
+	socket.on(SocketEmits.EMIT_CANDIDATE, async (data: CandidateFoundReq) => {
 		console.log("got candidate");
 		const userId = req.session.userId;
-		const $room = rooms.findRoomForUser(userId);
+		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
 	});
-	socket.on(SocketEmits.EMIT_OFFER, (data: SendOfferReq) => {
+	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
 		const userId = req.session.userId;
-		const $room = rooms.findRoomForUser(userId);
+		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_OFFER, data);
 	});
 	/*
@@ -202,35 +207,21 @@ io.on("connection", (socket) => {
 		socket.broadcast.to(room.id).emit(SocketEmits.SEND_MESSAGE, message);
 	});
     */
-	socket.on("disconnecting", () => {
+	socket.on("disconnecting", async () => {
 		console.log("disconnecting");
 		const userId = req.session.userId;
-		const $pool = pool.findUserInPool(userId);
-		const $room = rooms.findRoomForUser(userId);
-
+		const $pool = await pool.findUserInPool(userId);
+		const $room = await rooms.findRoomForUser(userId);
 		if ($pool) {
-			pool.removeFromPool(userId);
+			await pool.removeFromPool(userId);
 			// emit other user
 		} else if ($room) {
-			rooms.leaveRoom(userId);
+			await rooms.leaveRoom(userId);
 			// emit other user
 		} else if (!$pool) {
 		} else if (!$room) {
 		}
 	});
-});
-
-app.get("/get_lookups", (req, res) => {
-	res.send({
-		pool,
-		rooms,
-	});
-});
-
-// put this in a separate file for now
-app.get("/", (req, res) => {
-	res.setHeader;
-	res.send({ data: "hello world" });
 });
 
 app.post("/sessionLogin", (req, res) => {

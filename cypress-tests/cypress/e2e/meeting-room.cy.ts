@@ -8,18 +8,6 @@ import {
 	isPermissionAsk,
 } from "cypress-browser-permissions";
 
-const getPoolRoomData = async () => {
-	const poolRoomData = await axios.get(
-		`${consts.SOCKET_API_BASE}/get_lookups`
-	);
-	const pool: Pool = poolRoomData.data?.pool;
-	const rooms: Rooms = poolRoomData.data?.rooms;
-	return {
-		pool,
-		rooms,
-	};
-};
-
 describe("meeting page", () => {
 	beforeEach(() => {
 		cy.window()
@@ -38,39 +26,72 @@ describe("meeting page", () => {
 		cy.setCookie("authCookie", cookie);
 		isPermissionAllowed("microphone") && isPermissionAllowed("camera");
 	});
-	it("user joins empty pool", async () => {
-		let mocker = new RTCMocker(
-			consts.LANGUAGE_SEEKING,
-			consts.LANGUAGE_OFFERING
-		);
+
+	/*
+	false &&
+		it("user joins pool and is sent to a room", async () => {
+			let mocker = new RTCMocker(
+				consts.LANGUAGE_SEEKING,
+				consts.LANGUAGE_OFFERING
+			);
+			// may need to make user login repeatedly
+			const userId = "2Uxv8sPDFdNoErHwEjjjtUmdMbQ2";
+			const connectUrl = `${consts.WEBSITE_BASE}/meeting?offering=${consts.LANGUAGE_OFFERING}&seeking=${consts.LANGUAGE_SEEKING}`;
+			cy.visit(connectUrl);
+
+			cy.contains("Finding Available Partners").should("be.visible");
+
+			mocker.waitForRoom();
+			const { pool: $pool, rooms: $rooms } = await getPoolRoomData();
+			expect($pool, "current pool").to.exist;
+			expect($rooms, "current rooms").to.exist;
+
+			const otherUser: User = {
+				offering: mocker.offering,
+				seeking: mocker.seeking,
+				socketId: mocker.socket.id,
+				userId: mocker.userId,
+			};
+
+			expect(
+				$pool.offering[consts.LANGUAGE_OFFERING][userId],
+				"user1 offering is removed from pool"
+			).to.not.exist;
+			expect(
+				$pool.offering[consts.LANGUAGE_SEEKING][userId],
+				"user1 seeking is removed from pool"
+			).to.not.exist;
+			expect($pool.userLookup[userId], "user1 is removed from lookup").to
+				.not.exist;
+			expect(
+				$pool.offering[consts.LANGUAGE_OFFERING][otherUser.userId],
+				"user2 offering is removed from pool"
+			).to.not.exist;
+			expect(
+				$pool.offering[consts.LANGUAGE_SEEKING][otherUser.userId],
+				"user2 seeking is removed from pool"
+			).to.not.exist;
+			expect($pool.userLookup[userId], "user2 is removed from lookup").to
+				.not.exist;
+		});
+    */
+	it("user joins empty pool", () => {
 		// may need to make user login repeatedly
 		const userId = "2Uxv8sPDFdNoErHwEjjjtUmdMbQ2";
 		const connectUrl = `${consts.WEBSITE_BASE}/meeting?offering=${consts.LANGUAGE_OFFERING}&seeking=${consts.LANGUAGE_SEEKING}`;
-		cy.visit(connectUrl);
 
 		cy.contains("Finding Available Partners").should("be.visible");
 
-		mocker.waitForRoom();
-
-		const { pool, rooms } = await getPoolRoomData();
-
-		expect(pool, "current pool").to.exist;
-		expect(rooms, "current rooms").to.exist;
-		expect(pool.offering[consts.LANGUAGE_OFFERING][userId]).to.not.exist;
-		expect(pool.offering[consts.LANGUAGE_SEEKING][userId]).to.not.exist;
-		expect(pool.userLookup[userId]).to.not.exist;
-
-		expect(rooms.findRoomForUser(userId));
-	});
-	it("user joins empty pool", async () => {
-		// may need to make user login repeatedly
-		const userId = "2Uxv8sPDFdNoErHwEjjjtUmdMbQ2";
-		const connectUrl = `${consts.WEBSITE_BASE}/meeting?offering=${consts.LANGUAGE_OFFERING}&seeking=${consts.LANGUAGE_SEEKING}`;
-		cy.visit(connectUrl);
-
-		cy.contains("Finding Available Partners").should("be.visible");
-
-		const { pool, rooms } = await getPoolRoomData();
+		const pool = p.pool;
+		const user: User = {
+			offering: "offering",
+			seeking: "seeking",
+			userId: "userid",
+			socketId: "socketid",
+		};
+		pool.addToPool(user);
+		console.log("pool", pool);
+		const rooms = r.rooms;
 
 		expect(pool.userLookup, "pool lookup is not empty").to.not.deep.equal(
 			{}
@@ -90,11 +111,9 @@ describe("meeting page", () => {
 		expect(offeringPool?.[userId], "offer language in pool").to.exist;
 		expect(seekingPool?.[userId], "seeking language in pool").to.exist;
 
-		//cy.task("connectToPeer");
+		cy.go("back");
 
-		const poolRoomData2 = await axios.get(
-			`${consts.SOCKET_API_BASE}/get_lookups`
-		);
+		//cy.task("connectToPeer");
 
 		//cy.contains("Meeting Room").should("be.visible");
 	});

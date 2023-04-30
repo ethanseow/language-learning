@@ -1,6 +1,6 @@
 import { Pool, User } from "@/types";
 import * as _ from "lodash";
-export const pool: Pool = {
+const pool: Pool = {
 	offering: {},
 	seeking: {},
 	userLookup: {},
@@ -54,4 +54,8 @@ export const pool: Pool = {
 			return user;
 		}
 	},
+};
+
+export default {
+	pool,
 };

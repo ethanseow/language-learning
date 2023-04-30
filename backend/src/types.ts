@@ -1,4 +1,4 @@
-import { type Message, type SocketUser } from "./sockets";
+import { type Message, type SocketUser } from "./sockets.js";
 
 export type RoomUser =
 	| {
