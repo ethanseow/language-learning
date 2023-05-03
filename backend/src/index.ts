@@ -35,20 +35,6 @@ const app = expressApp.app;
 const server = expressApp.server;
 const sessionMiddleware = expressApp.sessionMiddleware;
 
-declare module "express-session" {
-	interface Session {
-		userId: string;
-	}
-}
-
-declare module "http" {
-	interface IncomingMessage {
-		sessionStore: Store;
-		session: session.Session;
-		cookieHolder: string;
-	}
-}
-
 export const io = new Server(server, {
 	cors: {
 		origin: consts.FRONTEND_URL,
@@ -63,6 +49,7 @@ export const io = new Server(server, {
 			},
 			// @ts-ignore
 			setHeader(name, value) {
+				// @ts-ignore
 				req.cookieHolder = value[0];
 			},
 			// @ts-ignore
@@ -70,12 +57,14 @@ export const io = new Server(server, {
 		};
 		// @ts-ignore
 		sessionMiddleware(req, fakeRes, () => {
+			// @ts-ignore
 			if (req.session) {
 				// trigger the setHeader() above
 
 				// @ts-ignore
 				fakeRes.writeHead();
 				// manually save the session (normally triggered by res.end())
+				// @ts-ignore
 				req.session.save();
 			}
 			callback(null, true);
@@ -94,6 +83,7 @@ io.on("connection", (socket) => {
 	console.log("connected", socket.id);
 	const req = socket.request;
 	socket.use((__, next) => {
+		//@ts-ignore
 		req.session.reload((err) => {
 			if (err) {
 				socket.disconnect();
@@ -154,17 +144,20 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
+		//@ts-ignore
 		const userId = req.session.userId;
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, async (data: CandidateFoundReq) => {
 		console.log("got candidate");
+		//@ts-ignore
 		const userId = req.session.userId;
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
 	});
 	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
+		//@ts-ignore
 		const userId = req.session.userId;
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_OFFER, data);
@@ -209,6 +202,7 @@ io.on("connection", (socket) => {
     */
 	socket.on("disconnecting", async () => {
 		console.log("disconnecting");
+		//@ts-ignore
 		const userId = req.session.userId;
 		const $pool = await pool.findUserInPool(userId);
 		const $room = await rooms.findRoomForUser(userId);
