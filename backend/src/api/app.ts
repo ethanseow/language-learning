@@ -8,10 +8,6 @@ import type { IncomingHttpHeaders, IncomingMessage } from "http";
 import { app as firebaseApp, analytics } from "@/firebase";
 import http from "http";
 import dotenv from "dotenv";
-import { fileURLToPath } from "url";
-import path from "path";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: __dirname + "/./../../.env" });
 const app = express();

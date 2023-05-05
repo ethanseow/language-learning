@@ -1,51 +1,17 @@
 import { Entity, Schema } from "redis-om";
-import client from "./client.js";
+import {
+	Room,
+	RoomUser,
+	RoomRepository,
+	RoomUserRepository,
+} from "./RoomSingleton";
 import { User } from "@/types";
 import { randomUUID } from "crypto";
 import _ from "lodash";
 
-/* our entity */
-class Room extends Entity {
-	id: string;
-	users: string[];
-	numInRoom: number;
-}
-class RoomUser extends Entity {
-	offering: string;
-	seeking: string;
-	socketId: string;
-	userId: string;
-	isActive: boolean;
-}
-
-const roomUserSchema = new Schema(RoomUser, {
-	offering: { type: "string" },
-	seeking: { type: "string" },
-	socketId: { type: "string" },
-	userId: { type: "string" },
-	isActive: { type: "boolean" },
-});
-
-const roomSchema = new Schema(
-	Room,
-	{
-		id: { type: "string" },
-		users: { type: "string[]", indexed: true },
-		numInRoom: { type: "number" },
-	},
-	{
-		dataStructure: "JSON",
-	}
-);
-
-/* use the client to create a Repository just for Persons */
-const roomRepository = client.fetchRepository(roomSchema);
-const roomUserRepository = client.fetchRepository(roomUserSchema);
-
-await roomRepository.createIndex();
-await roomUserRepository.createIndex();
-
 const createRoom = async (user1: User, user2: User): Promise<Room> => {
+	const roomRepository = await RoomRepository.getInstance();
+	const roomUserRepository = await RoomUserRepository.getInstance();
 	const roomId = randomUUID();
 	const roomUser1 = {
 		...user1,
@@ -67,6 +33,7 @@ const createRoom = async (user1: User, user2: User): Promise<Room> => {
 };
 
 const findRoomForUser = async (userId: string) => {
+	const roomRepository = await RoomRepository.getInstance();
 	const room = await roomRepository
 		.search()
 		.where("users")
@@ -80,6 +47,7 @@ const findRoomForUser = async (userId: string) => {
 };
 
 const findUsersForRoom = async (room: Room) => {
+	const roomUserRepository = await RoomUserRepository.getInstance();
 	const users: Record<string, RoomUser> = {};
 	room.users.forEach(async (userId) => {
 		let user = await roomUserRepository
@@ -108,6 +76,8 @@ const findOtherUserInRoom = async (userId: string): Promise<User | null> => {
 };
 
 const rejoinRoom = async (userId: string) => {
+	const roomRepository = await RoomRepository.getInstance();
+	const roomUserRepository = await RoomUserRepository.getInstance();
 	const room = await findRoomForUser(userId);
 	if (room) {
 		const users = await findUsersForRoom(room);
@@ -128,6 +98,8 @@ const rejoinRoom = async (userId: string) => {
 };
 
 const leaveRoom = async (userId: string) => {
+	const roomRepository = await RoomRepository.getInstance();
+	const roomUserRepository = await RoomUserRepository.getInstance();
 	const room = await findRoomForUser(userId);
 	if (room) {
 		const users = await findUsersForRoom(room);
@@ -148,6 +120,7 @@ const leaveRoom = async (userId: string) => {
 };
 
 const closeRoom = async (roomId: string) => {
+	const roomRepository = await RoomRepository.getInstance();
 	const rooms = await roomRepository
 		.search()
 		.where("id")
@@ -164,6 +137,8 @@ const closeRoom = async (roomId: string) => {
 };
 
 const clearAll = async () => {
+	const roomRepository = await RoomRepository.getInstance();
+	const roomUserRepository = await RoomUserRepository.getInstance();
 	const rooms = await roomRepository.search().return.all();
 	const users = await roomUserRepository.search().return.all();
 	const roomEntityIds = rooms.map((room) => {
@@ -177,8 +152,6 @@ const clearAll = async () => {
 };
 
 export default {
-	roomRepository,
-	roomUserRepository,
 	closeRoom,
 	leaveRoom,
 	rejoinRoom,

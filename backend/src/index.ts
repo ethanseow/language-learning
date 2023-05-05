@@ -13,24 +13,18 @@ import {
 	SocketUser,
 	SocketNamespaces,
 	type Message,
-} from "./sockets.js";
-import {
-	type Room,
-	type Pool,
-	type UserLookup,
-	UserPool,
-	User,
-} from "./types.js";
+} from "./sockets";
+import { type Room, type Pool, type UserLookup, UserPool, User } from "./types";
 import { Server, Socket } from "socket.io";
-import consts from "./consts.js";
+import consts from "./consts";
 import * as _ from "lodash";
-import { SocketEmits } from "./sockets.js";
+import { SocketEmits } from "./sockets";
 import session, { Session, SessionOptions, Store } from "express-session";
 import type { IncomingHttpHeaders, IncomingMessage } from "http";
 import { app as firebaseApp, analytics } from "@/firebase";
-import pool from "./redis/pool.js";
-import rooms from "./redis/room.js";
-import expressApp from "./api/app.js";
+import pool from "./redis/pool";
+import rooms from "./redis/room";
+import expressApp from "./api/app";
 const app = expressApp.app;
 const server = expressApp.server;
 const sessionMiddleware = expressApp.sessionMiddleware;
@@ -121,6 +115,7 @@ io.on("connection", (socket) => {
 				);
 			}
 		} else if (!$pool) {
+			console.log("joining room");
 			await pool.addToPool(user);
 		} else if (!$room) {
 			const otherUser = await pool.getCompatibleUser(user);

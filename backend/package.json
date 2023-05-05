@@ -3,11 +3,9 @@
 	"version": "1.0.0",
 	"description": "",
 	"main": "src/index.js",
-	"type": "module",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"watch": "nodemon --watch './**/*.ts' --exec ts-node --esm src/index.ts",
-		"dev": "tsc-watch --onSuccess \"npm run watch\""
+		"dev": "cd src && nodemon index.ts",
+		"test": "mocha -r ts-node/register test/**/*.ts --watch --watch-files test/**/*.ts"
 	},
 	"exports": "./dist/index.js",
 	"keywords": [],
@@ -15,8 +13,12 @@
 	"license": "ISC",
 	"devDependencies": {
 		"@types/dotenv": "^8.2.0",
+		"@types/expect": "^24.3.0",
 		"@types/express": "^4.17.17",
 		"@types/lodash": "^4.14.191",
+		"@types/mocha": "^10.0.1",
+		"mocha": "^10.2.0",
+		"ts-mocha": "^10.0.0",
 		"ts-node": "^10.9.1",
 		"ts-node-dev": "^2.0.0",
 		"typescript": "^4.9.5"
@@ -38,6 +40,7 @@
 		"redis": "^4.6.6",
 		"redis-om": "^0.3.6",
 		"socket-io": "^1.0.0",
-		"socket.io": "^4.6.1"
+		"socket.io": "^4.6.1",
+		"wrtc": "^0.4.7"
 	}
 }

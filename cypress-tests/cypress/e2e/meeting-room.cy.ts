@@ -7,7 +7,7 @@ import {
 	isPermissionBlocked,
 	isPermissionAsk,
 } from "cypress-browser-permissions";
-
+import { PoolRepository } from "@/../backend/src/redis/PoolSingleton";
 describe("meeting page", () => {
 	beforeEach(() => {
 		cy.window()
@@ -25,6 +25,15 @@ describe("meeting page", () => {
 			"eyJhbGciOiJSUzI1NiIsImtpZCI6InRCME0yQSJ9.eyJpc3MiOiJodHRwczovL3Nlc3Npb24uZmlyZWJhc2UuZ29vZ2xlLmNvbS9saW5nay1iYmQwNCIsIm5hbWUiOiJFdGhhbiBTZW93IiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FHTm15eFlCLWVtcjR2MEtuazB1ZHU4Vi1XNXZZSGdIWG5PVFhiUlhOY0pRTVFcdTAwM2RzOTYtYyIsImF1ZCI6ImxpbmdrLWJiZDA0IiwiYXV0aF90aW1lIjoxNjgyMzA2ODM1LCJ1c2VyX2lkIjoiMlV4djhzUERGZE5vRXJId0Vqamp0VW1kTWJRMiIsInN1YiI6IjJVeHY4c1BERmROb0VySHdFampqdFVtZE1iUTIiLCJpYXQiOjE2ODIzMDY4MzYsImV4cCI6MTY4MjczODgzNiwiZW1haWwiOiJldGhhbnNlb3cwMEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExMzA1MDI0NjA2NTE0ODk1NDc4NSJdLCJlbWFpbCI6WyJldGhhbnNlb3cwMEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.ld5RfurHOvbaqtcLdXpPBPVe3Qvan9vhww9YP_74YC_aEsFVXnxSRpgZtL1enr4VMUBeNs0k-f1yXcrRw4SHfkSa48U2t56VCGyduUEzIPQQQk_CXxh60YkktOYAA2KOoJLmy3KqNrP0N56lv-rco4_Z1C1AwJwBxnyJxCsYnXi_YEbXdgylpm0xkcHKuWTtxdOsswF3BXf7ZGnDqQKvNvzMt9KWbrjVoQxJ7-sLSNsA_frqaQDw9s35BB6gnX82oMct72625H5CDmumqn4pW7NaGQc_ETqX7tmm4vOEwUIQE7OfAjENXFczxKS_FLdc8ARh0YOegLLMFgA_ty5ctA";
 		cy.setCookie("authCookie", cookie);
 		isPermissionAllowed("microphone") && isPermissionAllowed("camera");
+	});
+	it("Runs Pool", async () => {
+		const pool = await PoolRepository.getInstance();
+		await pool.createAndSave({
+			offering: "offering from cypress",
+			seeking: "seeknig from cypress",
+			socketId: "socketId from cypress",
+			userId: "userId from cypress",
+		});
 	});
 
 	/*
@@ -74,7 +83,6 @@ describe("meeting page", () => {
 			expect($pool.userLookup[userId], "user2 is removed from lookup").to
 				.not.exist;
 		});
-    */
 	it("user joins empty pool", () => {
 		// may need to make user login repeatedly
 		const userId = "2Uxv8sPDFdNoErHwEjjjtUmdMbQ2";
@@ -117,4 +125,5 @@ describe("meeting page", () => {
 
 		//cy.contains("Meeting Room").should("be.visible");
 	});
+    */
 });

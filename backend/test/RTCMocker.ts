@@ -1,5 +1,5 @@
 import { Socket, io } from "socket.io-client";
-import { SocketEmits } from "../frontend/backend-api/sockets";
+import { SocketEmits } from "../../frontend/backend-api/sockets";
 import * as wrtc from "wrtc";
 import {
 	type JoinRoomReq,
@@ -8,8 +8,8 @@ import {
 	type CandidateFoundReq,
 	type SendOfferReq,
 	type SendAnswerReq,
-} from "../frontend/backend-api/sockets";
-import consts from "./consts";
+} from "../../frontend/backend-api/sockets";
+import consts from "./../src/consts";
 const servers = {
 	iceServers: [
 		{
@@ -29,13 +29,14 @@ export class RTCMocker {
 	partnerId: string | null;
 	polite: boolean;
 	makingOffer: boolean;
-	constructor(offering: string, seeking: string) {
-		this.userId = "" + Math.random() * 100000;
+	constructor(offering: string, seeking: string, userId: string) {
 		this.offering = offering;
 		this.seeking = seeking;
-		this.socket = io(consts.SOCKET_API_BASE, {
+		console.log("Before socket connected");
+		this.socket = io(consts.SOCKET_URL, {
 			withCredentials: true,
 		});
+		console.log("Connected");
 		this.peerConnection = new wrtc.RTCPeerConnection(servers);
 		this.makingOffer = false;
 		this.socket.on(
@@ -128,5 +129,9 @@ export class RTCMocker {
 			seeking: this.offering,
 		};
 		this.socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
+	}
+	disconnect() {
+		this.socket.close();
+		this.peerConnection.close();
 	}
 }

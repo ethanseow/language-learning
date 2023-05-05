@@ -1,28 +1,9 @@
 import { Entity, Schema } from "redis-om";
-import client from "./client.js";
+import { PoolRepository } from "./PoolSingleton";
 import { User } from "@/types";
 
-/* our entity */
-class PoolUser extends Entity {
-	offering: string;
-	seeking: string;
-	socketId: string;
-	userId: string;
-}
-/* create a Schema for Person */
-const poolUserSchema = new Schema(PoolUser, {
-	offering: { type: "string" },
-	seeking: { type: "string" },
-	socketId: { type: "string" },
-	userId: { type: "string" },
-});
-
-/* use the client to create a Repository just for Persons */
-const poolRepository = client.fetchRepository(poolUserSchema);
-
-await poolRepository.createIndex();
-
 const findUserInPool = async (userId: string) => {
+	const poolRepository = await PoolRepository.getInstance();
 	const entity = await poolRepository
 		.search()
 		.where("userId")
@@ -32,10 +13,12 @@ const findUserInPool = async (userId: string) => {
 };
 
 const addToPool = async (user: User) => {
+	const poolRepository = await PoolRepository.getInstance();
 	await poolRepository.createAndSave(user);
 };
 
 const removeFromPool = async (userId: string) => {
+	const poolRepository = await PoolRepository.getInstance();
 	const entity = await findUserInPool(userId);
 	if (entity) {
 		return null;
@@ -45,6 +28,7 @@ const removeFromPool = async (userId: string) => {
 };
 
 const getCompatibleUser = async (user: User) => {
+	const poolRepository = await PoolRepository.getInstance();
 	const entity = await poolRepository
 		.search()
 		.where("seeking")
@@ -56,6 +40,7 @@ const getCompatibleUser = async (user: User) => {
 };
 
 const clearAll = async () => {
+	const poolRepository = await PoolRepository.getInstance();
 	const pool = await poolRepository.search().return.all();
 	const entityIds = pool.map((pool) => {
 		return pool.entityId;
@@ -64,7 +49,6 @@ const clearAll = async () => {
 };
 
 export default {
-	poolRepository,
 	addToPool,
 	getCompatibleUser,
 	removeFromPool,
