@@ -23,17 +23,11 @@ const roomUserSchema = new Schema(RoomUser, {
 	isActive: { type: "boolean" },
 });
 
-const roomSchema = new Schema(
-	Room,
-	{
-		id: { type: "string" },
-		users: { type: "string[]", indexed: true },
-		numInRoom: { type: "number" },
-	},
-	{
-		dataStructure: "JSON",
-	}
-);
+const roomSchema = new Schema(Room, {
+	id: { type: "string" },
+	users: { type: "string[]", indexed: true },
+	numInRoom: { type: "number" },
+});
 class RoomUserRepository {
 	private static instance: Repository<RoomUser>;
 	constructor() {

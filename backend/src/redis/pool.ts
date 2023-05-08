@@ -9,6 +9,8 @@ const findUserInPool = async (userId: string) => {
 		.where("userId")
 		.equals(userId)
 		.return.first();
+	const p = entity;
+	console.log("userId", p?.userId);
 	return entity;
 };
 

@@ -29,6 +29,15 @@ const app = expressApp.app;
 const server = expressApp.server;
 const sessionMiddleware = expressApp.sessionMiddleware;
 
+declare module "http" {
+	interface IncomingMessage {
+		session: Session & {
+			userId: string;
+		};
+		cookieHolder?: string;
+	}
+}
+
 export const io = new Server(server, {
 	cors: {
 		origin: consts.FRONTEND_URL,
@@ -86,57 +95,74 @@ io.on("connection", (socket) => {
 			}
 		});
 	});
-	socket.on(SocketEmits.WAIT_FOR_ROOM, async (data: JoinRoomReq) => {
-		const userId = data.userId;
-		const user: User = {
-			offering: data.offering,
-			seeking: data.seeking,
-			userId: data.userId,
-			socketId: socket.id,
-		};
-		console.log("user", user);
-		const $pool = await pool.findUserInPool(userId);
-		const $room = await rooms.findRoomForUser(userId);
-		if ($pool) {
-		} else if ($room) {
-			if (!$room.users[userId].isActive) {
-				await rooms.rejoinRoom(userId);
-				const otherSocket = await rooms.findOtherUserInRoom(userId);
-				io.to(otherSocket.socketId).emit(
-					SocketEmits.ASK_POLITENESS,
-					{},
-					(isPolite: boolean) => {
-						const data: JoinedRoomReq = {
-							roomId: $room.id,
-							isPolite: !isPolite,
-						};
-						io.to(socket.id).emit(SocketEmits.CREATED_ROOM, data);
-					}
-				);
+	socket.on(
+		SocketEmits.WAIT_FOR_ROOM,
+		async (data: JoinRoomReq, callback) => {
+			const userId = data.userId;
+			req.session.userId = userId;
+			const user: User = {
+				offering: data.offering,
+				seeking: data.seeking,
+				userId: data.userId,
+				socketId: socket.id,
+			};
+			console.log("user", user);
+			const $pool = await pool.findUserInPool(userId);
+			const $room = await rooms.findRoomForUser(userId);
+			if ($pool) {
+			} else if ($room) {
+				if (!$room.users[userId].isActive) {
+					await rooms.rejoinRoom(userId);
+					const otherSocket = await rooms.findOtherUserInRoom(userId);
+					io.to(otherSocket.socketId).emit(
+						SocketEmits.ASK_POLITENESS,
+						{},
+						(isPolite: boolean) => {
+							const data: JoinedRoomReq = {
+								roomId: $room.id,
+								isPolite: !isPolite,
+							};
+							io.to(socket.id).emit(
+								SocketEmits.CREATED_ROOM,
+								data
+							);
+						}
+					);
+				}
+			} else if (!$pool) {
+				console.log("joining room");
+				await pool.addToPool(user);
+			} else if (!$room) {
+				const otherUser = await pool.getCompatibleUser(user);
+				if (otherUser) {
+					const otherUserId = otherUser.getUserId();
+					const otherUserUserObj: User = {
+						offering: otherUser.getOffering(),
+						seeking: otherUser.getSeeking(),
+						userId: otherUserId,
+						socketId: otherUser.getSocketId(),
+					};
+					await pool.removeFromPool(otherUserId);
+					const room = await rooms.createRoom(otherUserUserObj, user);
+					const otherSocket = io.sockets.sockets.get(
+						otherUserUserObj.socketId
+					);
+					const mySocket = socket;
+					otherSocket.join(room.id);
+					mySocket.join(room.id);
+					io.to(otherSocket.id).emit(SocketEmits.CREATED_ROOM, {
+						roomId: room.id,
+						isPolite: false,
+					});
+					io.to(socket.id).emit(SocketEmits.CREATED_ROOM, {
+						roomId: room.id,
+						isPolite: true,
+					});
+				}
 			}
-		} else if (!$pool) {
-			console.log("joining room");
-			await pool.addToPool(user);
-		} else if (!$room) {
-			const otherUser = await pool.getCompatibleUser(user);
-			if (otherUser) {
-				await pool.removeFromPool(otherUser.userId);
-				const room = await rooms.createRoom(otherUser, user);
-				const otherSocket = io.sockets.sockets.get(otherUser.socketId);
-				const mySocket = socket;
-				otherSocket.join(room.id);
-				mySocket.join(room.id);
-				io.to(otherSocket.id).emit(SocketEmits.CREATED_ROOM, {
-					roomId: room.id,
-					isPolite: false,
-				});
-				io.to(socket.id).emit(SocketEmits.CREATED_ROOM, {
-					roomId: room.id,
-					isPolite: true,
-				});
-			}
+			callback({});
 		}
-	});
+	);
 
 	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		//@ts-ignore
@@ -199,16 +225,20 @@ io.on("connection", (socket) => {
 		console.log("disconnecting");
 		//@ts-ignore
 		const userId = req.session.userId;
-		const $pool = await pool.findUserInPool(userId);
-		const $room = await rooms.findRoomForUser(userId);
-		if ($pool) {
-			await pool.removeFromPool(userId);
-			// emit other user
-		} else if ($room) {
-			await rooms.leaveRoom(userId);
-			// emit other user
-		} else if (!$pool) {
-		} else if (!$room) {
+		try {
+			const $pool = await pool.findUserInPool(userId);
+			const $room = await rooms.findRoomForUser(userId);
+			if ($pool) {
+				await pool.removeFromPool(userId);
+				// emit other user
+			} else if ($room) {
+				await rooms.leaveRoom(userId);
+				// emit other user
+			} else if (!$pool) {
+			} else if (!$room) {
+			}
+		} catch (e) {
+			console.log(e);
 		}
 	});
 });

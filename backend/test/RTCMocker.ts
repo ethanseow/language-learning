@@ -1,6 +1,7 @@
 import { Socket, io } from "socket.io-client";
 import { SocketEmits } from "../../frontend/backend-api/sockets";
 import * as wrtc from "wrtc";
+import { parse } from "cookie";
 import {
 	type JoinRoomReq,
 	type JoinedRoomReq,
@@ -30,13 +31,34 @@ export class RTCMocker {
 	polite: boolean;
 	makingOffer: boolean;
 	constructor(offering: string, seeking: string, userId: string) {
+		this.userId = userId;
 		this.offering = offering;
 		this.seeking = seeking;
-		console.log("Before socket connected");
+	}
+	connect = async () => {
+		const COOKIE_NAME = "sid";
 		this.socket = io(consts.SOCKET_URL, {
 			withCredentials: true,
 		});
-		console.log("Connected");
+		this.socket.io.on("open", () => {
+			this.socket.io.engine.transport.on("pollComplete", () => {
+				//@ts-ignore
+				const request = this.socket.io.engine.transport.pollXhr.xhr;
+				const cookieHeader = request.getResponseHeader("set-cookie");
+				if (!cookieHeader) {
+					return;
+				}
+				cookieHeader.forEach((cookieString) => {
+					console.log("string", cookieString);
+					if (cookieString.includes(`${COOKIE_NAME}=`)) {
+						const cookie = parse(cookieString);
+						this.socket.io.opts.extraHeaders = {
+							cookie: `${COOKIE_NAME}=${cookie[COOKIE_NAME]}`,
+						};
+					}
+				});
+			});
+		});
 		this.peerConnection = new wrtc.RTCPeerConnection(servers);
 		this.makingOffer = false;
 		this.socket.on(
@@ -88,7 +110,7 @@ export class RTCMocker {
 			console.log("Accepting answer");
 			this.acceptAnswer(data.answer);
 		});
-	}
+	};
 	acceptAnswer = async (answer: RTCSessionDescriptionInit) => {
 		if (!this.peerConnection.currentRemoteDescription) {
 			console.log("accepted answer");
@@ -122,16 +144,21 @@ export class RTCMocker {
 		console.log("emitting answer");
 		this.socket.emit(SocketEmits.EMIT_ANSWER, data);
 	};
-	waitForRoom() {
+	waitForRoom = async () => {
 		const data: JoinRoomReq = {
 			userId: this.userId,
 			offering: this.seeking,
 			seeking: this.offering,
 		};
-		this.socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
-	}
+		this.socket.emit(SocketEmits.WAIT_FOR_ROOM, data, (response: any) => {
+			console.log("retrieve callback");
+			Promise.resolve(true);
+		});
+	};
 	disconnect() {
-		this.socket.close();
-		this.peerConnection.close();
+		if (this.socket) {
+			this.socket.close();
+			this.peerConnection.close();
+		}
 	}
 }

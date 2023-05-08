@@ -2,12 +2,22 @@ import { Client } from "./ClientSingleton";
 import { createClient } from "redis";
 import dotenv from "dotenv";
 import path from "path";
-import { Entity, Repository, Schema } from "redis-om";
+import { Entity, EntityData, Repository, Schema } from "redis-om";
+import { User } from "@/types";
 class PoolUser extends Entity {
-	offering: string;
-	seeking: string;
-	socketId: string;
 	userId: string;
+	getUserId(): string {
+		return this.toJSON()["userId"];
+	}
+	getOffering(): string {
+		return this.toJSON()["offering"];
+	}
+	getSocketId(): string {
+		return this.toJSON()["socketId"];
+	}
+	getSeeking(): string {
+		return this.toJSON()["seeking"];
+	}
 }
 const poolUserSchema = new Schema(PoolUser, {
 	offering: { type: "string" },
