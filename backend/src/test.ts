@@ -40,7 +40,6 @@ const main = async () => {
 	});
 	const p = await pool.findUserInPool("user1");
 	//@ts-ignore
-	console.log("userId", p.seeking);
 };
 main();
 //mocker1.waitForRoom();
