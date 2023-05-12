@@ -21,7 +21,6 @@ const main = async () => {
 main();
 */
 
-/*
 const offering = "English";
 const seeking = "Spanish";
 const userId1 = "user 1";
@@ -29,17 +28,19 @@ const userId2 = "2 user";
 const mocker1 = new RTCMocker(offering, seeking, userId1);
 const mocker2 = new RTCMocker(seeking, offering, userId2);
 mocker1.disconnect();
-mocker1.waitForRoom();
-*/
+mocker2.disconnect();
 const main = async () => {
-	await pool.addToPool({
-		offering: "offering",
-		seeking: "seeking",
-		userId: "userId",
-		socketId: "socketId",
-	});
-	const p = await pool.findUserInPool("user1");
-	//@ts-ignore
+	const delay = (time) => {
+		return new Promise((resolve) =>
+			setTimeout(() => {
+				return resolve;
+			}, time)
+		);
+	};
+	mocker1.connect();
+	mocker1.waitForRoom();
+	mocker2.connect();
+	mocker2.waitForRoom();
 };
 main();
 //mocker1.waitForRoom();

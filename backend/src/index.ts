@@ -143,7 +143,7 @@ io.on("connection", (socket) => {
 					await pool.removeFromPool(otherUserId);
 					const room = await rooms.createRoom(otherUserUserObj, user);
 					const otherSocket = io.sockets.sockets.get(
-						otherUserUserObj.socketId
+						otherUser.socketId
 					);
 					const mySocket = socket;
 					otherSocket.join(room.id);
@@ -181,6 +181,7 @@ io.on("connection", (socket) => {
 	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
 		//@ts-ignore
 		const userId = req.session.userId;
+		console.log("inside of emit offer, caller's user id", userId);
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_OFFER, data);
 	});
