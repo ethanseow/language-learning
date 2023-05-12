@@ -150,10 +150,7 @@ export class RTCMocker {
 			offering: this.seeking,
 			seeking: this.offering,
 		};
-		this.socket.emit(SocketEmits.WAIT_FOR_ROOM, data, (response: any) => {
-			console.log("retrieve callback");
-			Promise.resolve(true);
-		});
+		this.socket.emit(SocketEmits.WAIT_FOR_ROOM, data);
 	};
 	disconnect() {
 		if (this.socket) {

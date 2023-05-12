@@ -83,7 +83,7 @@ io.engine.on("initial_headers", (headers, req) => {
 });
 
 io.on("connection", (socket) => {
-	console.log("connected", socket.id);
+	console.log("Socket has connected", socket.id);
 	const req = socket.request;
 	socket.use((__, next) => {
 		//@ts-ignore
@@ -106,7 +106,7 @@ io.on("connection", (socket) => {
 				userId: data.userId,
 				socketId: socket.id,
 			};
-			console.log("user", user);
+			console.log("User has joined pool/room", user);
 			const $pool = await pool.findUserInPool(userId);
 			const $room = await rooms.findRoomForUser(userId);
 			if ($pool) {
@@ -129,18 +129,16 @@ io.on("connection", (socket) => {
 						}
 					);
 				}
-			} else if (!$pool) {
-				console.log("joining room");
-				await pool.addToPool(user);
-			} else if (!$room) {
+			} else if (!$pool && !$room) {
 				const otherUser = await pool.getCompatibleUser(user);
 				if (otherUser) {
-					const otherUserId = otherUser.getUserId();
+					console.log("Found other compatible user");
+					const otherUserId = otherUser.userId;
 					const otherUserUserObj: User = {
-						offering: otherUser.getOffering(),
-						seeking: otherUser.getSeeking(),
+						offering: otherUser.offering,
+						seeking: otherUser.seeking,
 						userId: otherUserId,
-						socketId: otherUser.getSocketId(),
+						socketId: otherUser.socketId,
 					};
 					await pool.removeFromPool(otherUserId);
 					const room = await rooms.createRoom(otherUserUserObj, user);
@@ -150,6 +148,7 @@ io.on("connection", (socket) => {
 					const mySocket = socket;
 					otherSocket.join(room.id);
 					mySocket.join(room.id);
+					console.log("Created room", room.toJSON());
 					io.to(otherSocket.id).emit(SocketEmits.CREATED_ROOM, {
 						roomId: room.id,
 						isPolite: false,
@@ -158,9 +157,11 @@ io.on("connection", (socket) => {
 						roomId: room.id,
 						isPolite: true,
 					});
+				} else {
+					console.log("User is joining pool");
+					await pool.addToPool(user);
 				}
 			}
-			callback({});
 		}
 	);
 

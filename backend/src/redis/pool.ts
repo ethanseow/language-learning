@@ -10,7 +10,6 @@ const findUserInPool = async (userId: string) => {
 		.equals(userId)
 		.return.first();
 	const p = entity;
-	console.log("userId", p?.userId);
 	return entity;
 };
 
@@ -22,7 +21,7 @@ const addToPool = async (user: User) => {
 const removeFromPool = async (userId: string) => {
 	const poolRepository = await PoolRepository.getInstance();
 	const entity = await findUserInPool(userId);
-	if (entity) {
+	if (!entity) {
 		return null;
 	}
 	await poolRepository.remove(entity.entityId);

@@ -6,18 +6,9 @@ import { Entity, EntityData, Repository, Schema } from "redis-om";
 import { User } from "@/types";
 class PoolUser extends Entity {
 	userId: string;
-	getUserId(): string {
-		return this.toJSON()["userId"];
-	}
-	getOffering(): string {
-		return this.toJSON()["offering"];
-	}
-	getSocketId(): string {
-		return this.toJSON()["socketId"];
-	}
-	getSeeking(): string {
-		return this.toJSON()["seeking"];
-	}
+	offering: string;
+	seeking: string;
+	socketId: string;
 }
 const poolUserSchema = new Schema(PoolUser, {
 	offering: { type: "string" },

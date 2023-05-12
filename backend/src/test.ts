@@ -32,6 +32,12 @@ mocker1.disconnect();
 mocker1.waitForRoom();
 */
 const main = async () => {
+	await pool.addToPool({
+		offering: "offering",
+		seeking: "seeking",
+		userId: "userId",
+		socketId: "socketId",
+	});
 	const p = await pool.findUserInPool("user1");
 	//@ts-ignore
 	console.log("userId", p.seeking);
