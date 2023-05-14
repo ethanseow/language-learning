@@ -1,7 +1,7 @@
 import { Socket, io } from "socket.io-client";
 import { SocketEmits } from "../../frontend/backend-api/sockets";
 import * as wrtc from "wrtc";
-import { workerData, parentPort } from "worker_threads";
+import { workerData, parentPort, isMainThread } from "worker_threads";
 import { parse } from "cookie";
 import {
 	type JoinRoomReq,
@@ -152,7 +152,6 @@ export class RTCMocker {
 			this.acceptAnswer(data.answer);
 		});
 	};
-
 	handleIceCandidate = async (data: CandidateFoundReq) => {
 		console.log("Got ice candidate");
 		if (this.peerConnection) {
@@ -165,6 +164,7 @@ export class RTCMocker {
 			console.log("accepted answer");
 			this.peerConnection.setRemoteDescription(answer);
 			this.makingOffer = false;
+			parentPort.postMessage({ completed: true });
 		}
 	};
 	createOffer = async (isPolite) => {
@@ -226,11 +226,13 @@ export class RTCMocker {
 	}
 }
 
-const offering: string = workerData.offering;
-const seeking: string = workerData.seeking;
-const userId: string = workerData.userId;
+if (!isMainThread) {
+	const offering: string = workerData.offering;
+	const seeking: string = workerData.seeking;
+	const userId: string = workerData.userId;
 
-const mocker = new RTCMocker(offering, seeking, userId);
+	const mocker = new RTCMocker(offering, seeking, userId);
 
-mocker.connect();
-mocker.waitForRoom();
+	mocker.connect();
+	mocker.waitForRoom();
+}
