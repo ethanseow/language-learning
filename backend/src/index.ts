@@ -193,6 +193,7 @@ io.on("connection", (socket) => {
 	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		//@ts-ignore
 		const userId = req.session?.user?.userId;
+		console.log("received an answer from", userId);
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
@@ -212,7 +213,6 @@ io.on("connection", (socket) => {
 		const allRooms = await rooms.getAllRooms();
 		console.log("allRooms", allRooms);
 		const $room = await rooms.findRoomForUser(userId);
-
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_OFFER, data);
 	});
 	/*

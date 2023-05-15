@@ -93,6 +93,13 @@ export class RTCMocker {
 				this.peerConnection.restartIce();
 			}
 		};
+		this.peerConnection.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+			if (e.candidate) {
+				this.socket.emit(SocketEmits.EMIT_CANDIDATE, {
+					candidate: e.candidate,
+				});
+			}
+		};
 	}
 	connect = async () => {
 		const COOKIE_NAME = "sid";
@@ -170,29 +177,32 @@ export class RTCMocker {
 		}
 	};
 	acceptAnswer = async (answer: RTCSessionDescriptionInit) => {
+		console.log("received an answer");
 		if (!this.peerConnection.currentRemoteDescription) {
 			console.log("accepted answer");
 			this.peerConnection.setRemoteDescription(answer);
 			this.makingOffer = false;
-			parentPort.postMessage({ completed: true });
+			//parentPort.postMessage({ completed: true });
 		}
 	};
 	createOffer = async (isPolite) => {
 		console.log("before set local description");
-		this.polite = isPolite;
-		this.makingOffer = true;
-		const offer = await this.peerConnection.createOffer();
-		await this.peerConnection.setLocalDescription(offer);
-		const data: SendOfferReq = {
-			//@ts-ignore
-			offer: this.peerConnection.localDescription,
-		};
-		console.log("user", this.userId, "is creating offer");
-		this.socket.emit(SocketEmits.EMIT_OFFER, data);
-		console.log("done creating offer");
+		if (isPolite) {
+			this.makingOffer = true;
+			const offer = await this.peerConnection.createOffer();
+			await this.peerConnection.setLocalDescription(offer);
+			const data: SendOfferReq = {
+				//@ts-ignore
+				offer: this.peerConnection.localDescription,
+			};
+			console.log("user", this.userId, "is creating offer");
+			this.socket.emit(SocketEmits.EMIT_OFFER, data);
+			console.log("done creating offer");
+		}
 	};
 
 	acceptOffer = async (offer: RTCSessionDescriptionInit) => {
+		/*
 		console.log("received an offer");
 		const offeringRightNow =
 			this.peerConnection.signalingState !== "stable" && this.makingOffer;
@@ -205,7 +215,8 @@ export class RTCMocker {
 		}
 		console.log("Accepted Offer");
 		this.makingOffer = false;
-		console.log("at accept offer function");
+        */
+		console.log("at accept offer function", offer);
 		await this.peerConnection.setRemoteDescription(offer);
 
 		let answer = await this.peerConnection.createAnswer();
@@ -237,17 +248,15 @@ export class RTCMocker {
 	}
 }
 
-/*
 if (!isMainThread) {
 	const offering: string = workerData.offering;
 	const seeking: string = workerData.seeking;
 	const userId: string = workerData.userId;
-
-	const mocker = new RTCMocker(offering, seeking, userId);
+	const cookie: string = workerData.cookie;
+	const mocker = new RTCMocker(offering, seeking, userId, cookie);
 
 	console.log("running worker");
 	mocker.connect();
 	mocker.waitForRoom();
 	console.log("after waiting room worker");
 }
-*/

@@ -49,14 +49,18 @@ const findRoomForUser = async (userId: string) => {
 const findUsersForRoom = async (room: Room) => {
 	const roomUserRepository = await RoomUserRepository.getInstance();
 	const users: Record<string, RoomUser> = {};
-	room.users.forEach(async (userId) => {
-		let user = await roomUserRepository
-			.search()
-			.where("userId")
-			.equals(userId)
-			.return.first();
-		users[userId] = user;
-	});
+
+	await Promise.all(
+		room.users.map(async (userId) => {
+			let user = await roomUserRepository
+				.search()
+				.where("userId")
+				.equals(userId)
+				.return.first();
+			console.log("room", room.id, "user", user, userId);
+			users[userId] = user;
+		})
+	);
 	return users;
 };
 
@@ -107,7 +111,7 @@ const leaveRoom = async (userId: string) => {
 			return null;
 		}
 		const user = users[userId];
-		if (user.isActive == false) {
+		if (!user?.isActive) {
 			return null;
 		}
 		room.numInRoom -= 1;

@@ -89,6 +89,7 @@ describe("User", function () {
 			expect(r.users).to.contain(userId2, "user2 is in the room");
 		});
 	it("joins, matches into a room, and establishes RTC connection", function (done) {
+		/*
 		const main = async () => {
 			mocker1.connect();
 			mocker1.waitForRoom();
@@ -161,12 +162,13 @@ describe("User", function () {
 			};
 		};
 		main();
-		/*
+        */
 		const worker1 = new Worker("./worker.js", {
 			workerData: {
 				offering,
 				seeking,
 				userId: userId1,
+				cookie: authCookie1,
 				path: "./RTCMocker.ts",
 			},
 		});
@@ -175,6 +177,7 @@ describe("User", function () {
 				seeking: offering,
 				offering: seeking,
 				userId: userId2,
+				cookie: authCookie2,
 				path: "./RTCMocker.ts",
 			},
 		});
@@ -203,6 +206,7 @@ describe("User", function () {
 				checkIfFullyCompleted();
 			}
 		});
-        */
+		worker1.unref();
+		worker2.unref();
 	});
 });
