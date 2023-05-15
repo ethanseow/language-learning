@@ -29,10 +29,14 @@ const app = expressApp.app;
 const server = expressApp.server;
 const sessionMiddleware = expressApp.sessionMiddleware;
 
+type SessionUser = {
+	userId: string;
+};
+
 declare module "http" {
 	interface IncomingMessage {
 		session: Session & {
-			userId: string;
+			user: SessionUser;
 		};
 		cookieHolder?: string;
 	}
@@ -43,6 +47,7 @@ export const io = new Server(server, {
 		origin: consts.FRONTEND_URL,
 		credentials: true,
 	},
+	/*
 	allowRequest: (req, callback) => {
 		// with HTTP long-polling, we have access to the HTTP response here, but this is not
 		// the case with WebSocket, so we provide a dummy response object
@@ -73,18 +78,38 @@ export const io = new Server(server, {
 			callback(null, true);
 		});
 	},
+    */
 });
 
+io.engine.use(sessionMiddleware);
+
+/*
 io.engine.on("initial_headers", (headers, req) => {
 	if (req.cookieHolder) {
 		headers["set-cookie"] = req.cookieHolder;
 		delete req.cookieHolder;
 	}
 });
+*/
+
+const cookieLookup = {
+	cookie1: "user1",
+	cookie2: "2user",
+};
 
 io.on("connection", (socket) => {
 	console.log("Socket has connected", socket.id);
 	const req = socket.request;
+	socket.use((__, next) => {
+		const authCookie = socket.handshake.auth.authCookie;
+		console.log("authCookie", authCookie);
+		if (authCookie && !req.session.user) {
+			req.session.user = { userId: cookieLookup[authCookie] };
+			req.session.save();
+			console.log("session userId", req.session.user);
+		}
+		next();
+	});
 	socket.use((__, next) => {
 		//@ts-ignore
 		req.session.reload((err) => {
@@ -95,11 +120,11 @@ io.on("connection", (socket) => {
 			}
 		});
 	});
+
 	socket.on(
 		SocketEmits.WAIT_FOR_ROOM,
 		async (data: JoinRoomReq, callback) => {
 			const userId = data.userId;
-			req.session.userId = userId;
 			const user: User = {
 				offering: data.offering,
 				seeking: data.seeking,
@@ -111,7 +136,7 @@ io.on("connection", (socket) => {
 			const $room = await rooms.findRoomForUser(userId);
 			if ($pool) {
 			} else if ($room) {
-				if (!$room.users[userId].isActive) {
+				if (!$room?.users?.[userId]?.isActive) {
 					await rooms.rejoinRoom(userId);
 					const otherSocket = await rooms.findOtherUserInRoom(userId);
 					io.to(otherSocket.socketId).emit(
@@ -167,22 +192,27 @@ io.on("connection", (socket) => {
 
 	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		//@ts-ignore
-		const userId = req.session.userId;
+		const userId = req.session?.user?.userId;
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, async (data: CandidateFoundReq) => {
 		console.log("got candidate");
 		//@ts-ignore
-		const userId = req.session.userId;
+		const userId = req.session?.user?.userId;
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
 	});
 	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
+		const authCookie = socket.handshake.auth.authCookie;
+		console.log("in emit offer", authCookie);
 		//@ts-ignore
-		const userId = req.session.userId;
+		const userId = req.session?.user?.userId;
 		console.log("inside of emit offer, caller's user id", userId);
+		const allRooms = await rooms.getAllRooms();
+		console.log("allRooms", allRooms);
 		const $room = await rooms.findRoomForUser(userId);
+
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_OFFER, data);
 	});
 	/*
@@ -225,8 +255,12 @@ io.on("connection", (socket) => {
     */
 	socket.on("disconnecting", async () => {
 		console.log("disconnecting");
+		const userId = req.session?.user?.userId;
 		//@ts-ignore
-		const userId = req.session.userId;
+		console.log("userid", userId);
+		if (!userId) {
+			return;
+		}
 		try {
 			const $pool = await pool.findUserInPool(userId);
 			const $room = await rooms.findRoomForUser(userId);

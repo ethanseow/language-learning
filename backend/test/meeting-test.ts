@@ -10,19 +10,20 @@ const offering = "English";
 const seeking = "Spanish";
 const userId1 = "user1";
 const userId2 = "2user";
-const mocker1 = new RTCMocker(offering, seeking, userId1);
-const mocker2 = new RTCMocker(seeking, offering, userId2);
+const authCookie1 = "cookie1";
+const authCookie2 = "cookie2";
+const mocker1 = new RTCMocker(offering, seeking, userId1, authCookie1);
+const mocker2 = new RTCMocker(seeking, offering, userId2, authCookie2);
 
+const workers = [];
 describe("User", function () {
 	this.timeout(5000);
 	this.beforeEach(async () => {
-		/*
 		mocker1.disconnect();
 		mocker2.disconnect();
 		await delay(1000);
 		await pool.clearAll();
 		await room.clearAll();
-        */
 	});
 	const delay = (time) => {
 		return new Promise((resolve) => setTimeout(resolve, time));
@@ -33,7 +34,7 @@ describe("User", function () {
 			mocker1.waitForRoom();
 			await delay(1000);
 			const user1 = await pool.findUserInPool(userId1);
-			assert.equal(user1.userId, userId1, "user1 id is correct");
+			assert.equal(user1?.userId, userId1, "user1 id is correct");
 		});
 	false &&
 		it("adds to pool redis and finds compatible user", async () => {
@@ -87,76 +88,121 @@ describe("User", function () {
 			expect(r.users).to.contain(userId1, "user1 is in the room");
 			expect(r.users).to.contain(userId2, "user2 is in the room");
 		});
-	false &&
-		it("tests out done in mocha", function (done) {
-			setTimeout(() => {
-				console.log("finished with test");
-				done();
-			}, 3000);
-		});
-	it("tests out passing worker data to a worker.ts file", function (done) {
-		const worker = new Worker("./worker.js", {
-			workerData: {
-				value: 15,
-				path: "./test-worker.ts",
-			},
-		});
-		worker.on("message", (data) => {
-			console.log("Received data from worker", data.value);
-			done();
-		});
-	});
-	false &&
-		it("joins, matches into a room, and establishes RTC connection", function (done) {
-			/*
+	it("joins, matches into a room, and establishes RTC connection", function (done) {
+		const main = async () => {
 			mocker1.connect();
 			mocker1.waitForRoom();
 			await delay(1000);
 			mocker2.connect();
 			mocker2.waitForRoom();
-			await delay(3000);
-            */
+			await delay(1000);
 
-			const worker1 = new Worker("./worker.js", {
-				workerData: {
-					offering,
-					seeking,
-					userId: userId1,
-					path: "./RTCMocker.ts",
+			const fullyCompleted = {
+				mocker1: {
+					signaling: false,
+					connection: false,
 				},
-			});
-			const worker2 = new Worker("./worker.js", {
-				workerData: {
-					seeking: offering,
-					offering: seeking,
-					userId: userId2,
-					path: "./RTCMocker.ts",
+				mocker2: {
+					signaling: false,
+					connection: false,
 				},
-			});
+			};
+
 			const checkIfFullyCompleted = () => {
-				Object.keys(fullyCompleted).forEach((key) => {
-					if (fullyCompleted[key] == false) {
-						return false;
-					}
+				Object.keys(fullyCompleted).forEach((mocker) => {
+					Object.keys(mocker).forEach((key) => {
+						if (fullyCompleted[mocker][key] == false) {
+							return false;
+						}
+					});
 				});
 				done();
 				return true;
 			};
-			const fullyCompleted = {
-				worker1: false,
-				worker2: false,
+			mocker1.peerConnection.onsignalingstatechange = (e) => {
+				console.log(
+					"mocker1 signaling state has changed",
+					mocker1.peerConnection.signalingState
+				);
+				if (mocker1.peerConnection.signalingState == "stable") {
+					fullyCompleted.mocker1.signaling = true;
+				}
+				checkIfFullyCompleted();
 			};
-			worker1.on("message", (data) => {
-				if (data?.completed) {
-					fullyCompleted.worker1 = true;
-					checkIfFullyCompleted();
+			mocker2.peerConnection.onsignalingstatechange = (e) => {
+				console.log(
+					"mocker2 signaling state has changed",
+					mocker2.peerConnection.signalingState
+				);
+				if (mocker2.peerConnection.signalingState == "stable") {
+					fullyCompleted.mocker2.signaling = true;
 				}
-			});
-			worker2.on("message", (data) => {
-				if (data?.completed) {
-					fullyCompleted.worker1 = true;
-					checkIfFullyCompleted();
+				checkIfFullyCompleted();
+			};
+			mocker1.peerConnection.onconnectionstatechange = (e) => {
+				console.log(
+					"mocker1 signaling state has changed",
+					mocker1.peerConnection.connectionState
+				);
+				if (mocker1.peerConnection.connectionState == "connected") {
+					fullyCompleted.mocker1.connection = true;
 				}
-			});
+				checkIfFullyCompleted();
+			};
+			mocker2.peerConnection.onconnectionstatechange = (e) => {
+				console.log(
+					"mocker2 signaling state has changed",
+					mocker2.peerConnection.connectionState
+				);
+				if (mocker2.peerConnection.connectionState == "connected") {
+					fullyCompleted.mocker2.connection = true;
+				}
+				checkIfFullyCompleted();
+			};
+		};
+		main();
+		/*
+		const worker1 = new Worker("./worker.js", {
+			workerData: {
+				offering,
+				seeking,
+				userId: userId1,
+				path: "./RTCMocker.ts",
+			},
 		});
+		const worker2 = new Worker("./worker.js", {
+			workerData: {
+				seeking: offering,
+				offering: seeking,
+				userId: userId2,
+				path: "./RTCMocker.ts",
+			},
+		});
+		const checkIfFullyCompleted = () => {
+			Object.keys(fullyCompleted).forEach((key) => {
+				if (fullyCompleted[key] == false) {
+					return false;
+				}
+			});
+			done();
+			return true;
+		};
+		const fullyCompleted = {
+			worker1: false,
+			worker2: false,
+		};
+		worker1.on("message", (data) => {
+			if (data?.completed) {
+				fullyCompleted.worker1 = true;
+				checkIfFullyCompleted();
+			}
+		});
+		worker2.on("message", (data) => {
+			if (data?.completed) {
+				fullyCompleted.worker1 = true;
+				checkIfFullyCompleted();
+			}
+		});
+        */
+	});
 });

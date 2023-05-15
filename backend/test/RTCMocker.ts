@@ -34,7 +34,14 @@ export class RTCMocker {
 	makingOffer: boolean;
 	RTCSignalingState: string;
 	RTCConnectionState: string;
-	constructor(offering: string, seeking: string, userId: string) {
+	cookie: string;
+	constructor(
+		offering: string,
+		seeking: string,
+		userId: string,
+		cookie: string
+	) {
+		this.cookie = cookie;
 		this.userId = userId;
 		this.offering = offering;
 		this.seeking = seeking;
@@ -91,7 +98,11 @@ export class RTCMocker {
 		const COOKIE_NAME = "sid";
 		this.socket = io(consts.SOCKET_URL, {
 			withCredentials: true,
+			auth: {
+				authCookie: this.cookie,
+			},
 		});
+		/*
 		this.socket.io.on("open", () => {
 			this.socket.io.engine.transport.on("pollComplete", () => {
 				//@ts-ignore
@@ -111,6 +122,7 @@ export class RTCMocker {
 				});
 			});
 		});
+        */
 
 		this.makingOffer = false;
 		this.socket.on(
@@ -118,18 +130,16 @@ export class RTCMocker {
 			async (data: JoinedRoomReq) => {
 				//@ts-ignore
 				this.rtcConnect();
-				const delay = (time) => {
-					return new Promise((resolve) =>
-						setTimeout(() => {
-							console.log("waiting", time, "seconds");
-							return resolve;
-						}, time)
-					);
-				};
-				console.log("before delay");
-				await delay(1000);
-				console.log("after delay");
-				//	this.createOffer(data.isPolite);
+				function delay(timeout) {
+					return new Promise((resolve) => {
+						setTimeout(resolve, timeout);
+					});
+				}
+				// console.log("before delay");
+				// await delay(1000);
+				// console.log("after delay");
+				// await delay(1000);
+				await this.createOffer(data.isPolite);
 			}
 		);
 
@@ -171,7 +181,8 @@ export class RTCMocker {
 		console.log("before set local description");
 		this.polite = isPolite;
 		this.makingOffer = true;
-		await this.peerConnection.setLocalDescription();
+		const offer = await this.peerConnection.createOffer();
+		await this.peerConnection.setLocalDescription(offer);
 		const data: SendOfferReq = {
 			//@ts-ignore
 			offer: this.peerConnection.localDescription,
@@ -197,8 +208,8 @@ export class RTCMocker {
 		console.log("at accept offer function");
 		await this.peerConnection.setRemoteDescription(offer);
 
-		// let answer = await this.peerConnection.this.createAnswer();
-		await this.peerConnection.setLocalDescription();
+		let answer = await this.peerConnection.createAnswer();
+		await this.peerConnection.setLocalDescription(answer);
 		console.log("setting answer local description");
 
 		let data: SendAnswerReq = {
@@ -226,6 +237,7 @@ export class RTCMocker {
 	}
 }
 
+/*
 if (!isMainThread) {
 	const offering: string = workerData.offering;
 	const seeking: string = workerData.seeking;
@@ -233,6 +245,9 @@ if (!isMainThread) {
 
 	const mocker = new RTCMocker(offering, seeking, userId);
 
+	console.log("running worker");
 	mocker.connect();
 	mocker.waitForRoom();
+	console.log("after waiting room worker");
 }
+*/

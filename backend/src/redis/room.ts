@@ -151,7 +151,16 @@ const clearAll = async () => {
 	await roomUserRepository.remove(userEntityIds);
 };
 
+const getAllRooms = async () => {
+	const roomRepository = await RoomRepository.getInstance();
+	const roomUserRepository = await RoomUserRepository.getInstance();
+	const rooms = await roomRepository.search().return.all();
+	const users = await roomUserRepository.search().return.all();
+	return { rooms, users };
+};
+
 export default {
+	getAllRooms,
 	closeRoom,
 	leaveRoom,
 	rejoinRoom,
