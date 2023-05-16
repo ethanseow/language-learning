@@ -49,18 +49,14 @@ const findRoomForUser = async (userId: string) => {
 const findUsersForRoom = async (room: Room) => {
 	const roomUserRepository = await RoomUserRepository.getInstance();
 	const users: Record<string, RoomUser> = {};
-
-	await Promise.all(
-		room.users.map(async (userId) => {
-			let user = await roomUserRepository
-				.search()
-				.where("userId")
-				.equals(userId)
-				.return.first();
-			console.log("room", room.id, "user", user, userId);
-			users[userId] = user;
-		})
-	);
+	room.users.map(async (userId) => {
+		let user = await roomUserRepository
+			.search()
+			.where("userId")
+			.equals(userId)
+			.return.first();
+		users[userId] = user;
+	});
 	return users;
 };
 

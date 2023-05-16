@@ -1,6 +1,6 @@
-import { RTCMocker } from "../test/RTCMocker";
-import pool from "./../src/redis/pool";
-import room from "./../src/redis/room";
+import { RTCMocker } from "./RTCMocker";
+import pool from "../src/redis/pool";
+import room from "../src/redis/room";
 const offering = "English";
 const seeking = "Spanish";
 const userId1 = "user1";
@@ -19,13 +19,15 @@ const done = () => {
 const main = async () => {
 	await pool.clearAll();
 	await room.clearAll();
+	mocker1.rtcConnect();
 	mocker1.connect();
 	mocker1.waitForRoom();
 	await delay(1000);
+	mocker2.rtcConnect();
 	mocker2.connect();
 	mocker2.waitForRoom();
-	await delay(1000);
 
+	console.log("here");
 	const fullyCompleted = {
 		mocker1: {
 			signaling: false,
@@ -36,10 +38,26 @@ const main = async () => {
 			connection: false,
 		},
 	};
-
+	setTimeout(() => {
+		console.log("in settimeout - checking rtcs");
+		if (mocker1.peerConnection.signalingState == "stable") {
+			console.log("mocker1 signaling state GOOD");
+			if (mocker1.peerConnection.connectionState == "connected") {
+				console.log("mocker1 connection state GOOD");
+				if (mocker2.peerConnection.signalingState == "stable") {
+					console.log("mocker2 signaling state GOOD");
+					if (mocker2.peerConnection.connectionState == "connected") {
+						console.log("mocker2 connection state GOOD");
+						console.log("Done with test case");
+					}
+				}
+			}
+		}
+	}, 5000);
+	/*
 	const checkIfFullyCompleted = () => {
 		Object.keys(fullyCompleted).forEach((mocker) => {
-			Object.keys(mocker).forEach((key) => {
+			Object.keys(fullyCompleted[mocker]).forEach((key) => {
 				if (fullyCompleted[mocker][key] == false) {
 					return false;
 				}
@@ -88,5 +106,6 @@ const main = async () => {
 		}
 		checkIfFullyCompleted();
 	};
+    */
 };
 main();
