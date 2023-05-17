@@ -104,7 +104,10 @@ io.on("connection", (socket) => {
 			if ($pool) {
 			} else if ($room) {
 				const $roomUsers = await rooms.findUsersForRoom($room);
-				if ($roomUsers[userId]?.isActive) {
+				if (!$roomUsers[userId]?.isActive) {
+					console.log(
+						"SocketEmits.WAIT_FOR_ROOM - user is already part of a room and has left before"
+					);
 					await rooms.rejoinRoom(userId);
 					const otherSocket = await rooms.findOtherUserInRoom(userId);
 					/*
@@ -130,7 +133,7 @@ io.on("connection", (socket) => {
 					console.log(
 						"SocketEmits.WAIT_FOR_ROOM - me",
 						req.session.user.userId,
-						"compatiable user",
+						"- compatiable user",
 						otherUser.userId
 					);
 					const otherUserUserObj: User = {
