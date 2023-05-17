@@ -20,11 +20,11 @@ const main = async () => {
 	await pool.clearAll();
 	await room.clearAll();
 	mocker1.rtcConnect();
-	mocker1.connect();
+	mocker1.socketConnect();
 	mocker1.waitForRoom();
 	await delay(1000);
 	mocker2.rtcConnect();
-	mocker2.connect();
+	mocker2.socketConnect();
 	mocker2.waitForRoom();
 
 	console.log("here");

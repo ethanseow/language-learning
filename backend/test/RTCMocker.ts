@@ -1,8 +1,6 @@
 import { Socket, io } from "socket.io-client";
 import { SocketEmits } from "../../frontend/backend-api/sockets";
 import * as wrtc from "wrtc";
-import { workerData, parentPort, isMainThread } from "worker_threads";
-import { parse } from "cookie";
 import {
 	type JoinRoomReq,
 	type JoinedRoomReq,
@@ -51,15 +49,12 @@ export class RTCMocker {
 		this.peerConnection = new wrtc.RTCPeerConnection(servers);
 	}
 	setRTCConnectionState(state: string) {
-		console.log("setting RTCConnectionState", state, "I am", this.userId);
 		this.RTCConnectionState = state;
 	}
 	setRTCSignalingState(state: string) {
-		console.log("setting RTCSignalingState", state, "I am", this.userId);
 		this.RTCSignalingState = state;
 	}
 	rtcConnect() {
-		console.log("My connection state", this.peerConnection.connectionState);
 		this.peerConnection.onsignalingstatechange = (e) => {
 			switch (this.peerConnection.signalingState) {
 				case "stable":
@@ -94,18 +89,16 @@ export class RTCMocker {
 					break;
 			}
 		};
-		/*
-		this.peerConnection.oniceconnectionstatechange = () => {
-			if (this.peerConnection.iceConnectionState === "failed") {
-				this.peerConnection.restartIce();
-			}
-		};
-        */
 		this.peerConnection.addEventListener(
 			"icecandidate",
 			(e: RTCPeerConnectionIceEvent) => {
+				console.log("userId:", this.userId, "onicecandidate triggered");
 				if (e.candidate) {
-					console.log("ice candidate received");
+					console.log(
+						"userId:",
+						this.userId,
+						"sending ice candidate"
+					);
 					this.socket.emit(SocketEmits.EMIT_CANDIDATE, {
 						candidate: e.candidate,
 					});
@@ -113,7 +106,7 @@ export class RTCMocker {
 			}
 		);
 	}
-	connect = async () => {
+	socketConnect = async () => {
 		const COOKIE_NAME = "sid";
 		this.socket = io(consts.SOCKET_URL, {
 			withCredentials: true,
@@ -121,46 +114,11 @@ export class RTCMocker {
 				authCookie: this.cookie,
 			},
 		});
-		/*
-		this.socket.io.on("open", () => {
-			this.socket.io.engine.transport.on("pollComplete", () => {
-				//@ts-ignore
-				const request = this.socket.io.engine.transport.pollXhr.xhr;
-				const cookieHeader = request.getResponseHeader("set-cookie");
-				if (!cookieHeader) {
-					return;
-				}
-				cookieHeader.forEach((cookieString) => {
-					console.log("string", cookieString);
-					if (cookieString.includes(`${COOKIE_NAME}=`)) {
-						const cookie = parse(cookieString);
-						this.socket.io.opts.extraHeaders = {
-							cookie: `${COOKIE_NAME}=${cookie[COOKIE_NAME]}`,
-						};
-					}
-				});
-			});
-		});
-        */
-
 		this.makingOffer = false;
 		this.socket.on(
 			SocketEmits.CREATED_ROOM,
 			async (data: JoinedRoomReq) => {
 				//@ts-ignore
-				if (this.createdRoomLatch) {
-					return;
-				}
-				this.createdRoomLatch = true;
-				function delay(timeout) {
-					return new Promise((resolve) => {
-						setTimeout(resolve, timeout);
-					});
-				}
-				// console.log("before delay");
-				// await delay(1000);
-				// console.log("after delay");
-				// await delay(1000);
 				await this.createOffer(data.isPolite);
 			}
 		);
@@ -177,7 +135,7 @@ export class RTCMocker {
 		});
 		this.socket.on(
 			SocketEmits.EMIT_CANDIDATE,
-			(data: CandidateFoundReq) => {
+			async (data: CandidateFoundReq) => {
 				this.handleIceCandidate(data.candidate);
 			}
 		);
@@ -185,28 +143,36 @@ export class RTCMocker {
 			this.acceptOffer(data.offer);
 		});
 		this.socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
-			console.log("Accepting answer");
 			this.acceptAnswer(data.answer);
 		});
 	};
 	handleIceCandidate = async (candidate: RTCIceCandidate) => {
+		console.log("userId:", this.userId, "handleIceCandidate triggered");
 		if (this.peerConnection) {
-			console.log("Adding ice candidate");
+			console.log(
+				"userId:",
+				this.userId,
+				"handleIceCandidate adding ice candidate"
+			);
 			this.peerConnection.addIceCandidate(candidate);
 		}
 	};
 	acceptAnswer = async (answer: RTCSessionDescriptionInit) => {
-		console.log("received an answer");
+		console.log("userId:", this.userId, "acceptAnswer triggered");
 		if (!this.peerConnection.currentRemoteDescription) {
-			console.log("accepted answer");
+			console.log(
+				"userId:",
+				this.userId,
+				"accepting answer and setRemoteDescription(answer)"
+			);
 			this.peerConnection.setRemoteDescription(answer);
 			this.makingOffer = false;
-			//parentPort.postMessage({ completed: true });
 		}
 	};
 	createOffer = async (isPolite) => {
-		console.log("before set local description");
+		console.log("userId:", this.userId, "createOffer triggered");
 		if (isPolite) {
+			console.log("userId:", this.userId, "creating offer and localDesc");
 			this.makingOffer = true;
 			const offer = await this.peerConnection.createOffer({
 				offerToReceiveAudio: true,
@@ -216,9 +182,7 @@ export class RTCMocker {
 				//@ts-ignore
 				offer: this.peerConnection.localDescription,
 			};
-			console.log("user", this.userId, "is creating offer");
 			this.socket.emit(SocketEmits.EMIT_OFFER, data);
-			console.log("done creating offer");
 		}
 	};
 
@@ -237,18 +201,16 @@ export class RTCMocker {
 		console.log("Accepted Offer");
 		this.makingOffer = false;
         */
-		console.log("at accept offer function", offer);
+		console.log("userId:", this.userId, "acceptOffer triggered");
 		await this.peerConnection.setRemoteDescription(offer);
-
+		console.log("userId:", this.userId, "accepting offer");
 		let answer = await this.peerConnection.createAnswer();
 		await this.peerConnection.setLocalDescription(answer);
-		console.log("setting answer local description");
 
 		let data: SendAnswerReq = {
 			//@ts-ignore
 			answer: this.peerConnection.localDescription,
 		};
-		console.log("emitting answer");
 		this.socket.emit(SocketEmits.EMIT_ANSWER, data);
 	};
 	waitForRoom = async () => {
@@ -267,17 +229,7 @@ export class RTCMocker {
 			this.peerConnection.close();
 		}
 	}
-}
-
-if (!isMainThread) {
-	const offering: string = workerData.offering;
-	const seeking: string = workerData.seeking;
-	const userId: string = workerData.userId;
-	const cookie: string = workerData.cookie;
-	const mocker = new RTCMocker(offering, seeking, userId, cookie);
-
-	console.log("running worker");
-	mocker.connect();
-	mocker.waitForRoom();
-	console.log("after waiting room worker");
+	leaveRoom() {
+		this.disconnect();
+	}
 }
