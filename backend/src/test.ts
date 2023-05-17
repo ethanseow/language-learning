@@ -1,6 +1,6 @@
-import { RTCMocker } from "./RTCMocker";
-import pool from "../src/redis/pool";
-import room from "../src/redis/room";
+import { RTCMocker } from "../test/RTCMocker";
+import pool from "./redis/pool";
+import room from "./redis/room";
 const offering = "English";
 const seeking = "Spanish";
 const userId1 = "user1";
@@ -53,7 +53,7 @@ const main = async () => {
 				}
 			}
 		}
-	}, 5000);
+	}, 3000);
 	/*
 	const checkIfFullyCompleted = () => {
 		Object.keys(fullyCompleted).forEach((mocker) => {

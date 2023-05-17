@@ -35,6 +35,7 @@ export class RTCMocker {
 	RTCSignalingState: string;
 	RTCConnectionState: string;
 	cookie: string;
+	createdRoomLatch: boolean;
 	constructor(
 		offering: string,
 		seeking: string,
@@ -46,6 +47,7 @@ export class RTCMocker {
 		this.offering = offering;
 		this.seeking = seeking;
 		this.makingOffer = false;
+		this.createdRoomLatch = false;
 		this.peerConnection = new wrtc.RTCPeerConnection(servers);
 	}
 	setRTCConnectionState(state: string) {
@@ -92,31 +94,16 @@ export class RTCMocker {
 					break;
 			}
 		};
-		this.peerConnection.addEventListener(
-			"icegatheringstatechange",
-			(ev) => {
-				switch (this.peerConnection.iceGatheringState) {
-					case "new":
-						console.log("my ice gathering state is new");
-						break;
-					case "gathering":
-						console.log("my ice gathering state is gathering");
-						break;
-					case "complete":
-						console.log("my ice gathering state is complete");
-						break;
-				}
-			}
-		);
+		/*
 		this.peerConnection.oniceconnectionstatechange = () => {
 			if (this.peerConnection.iceConnectionState === "failed") {
 				this.peerConnection.restartIce();
 			}
 		};
+        */
 		this.peerConnection.addEventListener(
 			"icecandidate",
 			(e: RTCPeerConnectionIceEvent) => {
-				console.log("ice candidate event triggered");
 				if (e.candidate) {
 					console.log("ice candidate received");
 					this.socket.emit(SocketEmits.EMIT_CANDIDATE, {
@@ -161,6 +148,10 @@ export class RTCMocker {
 			SocketEmits.CREATED_ROOM,
 			async (data: JoinedRoomReq) => {
 				//@ts-ignore
+				if (this.createdRoomLatch) {
+					return;
+				}
+				this.createdRoomLatch = true;
 				function delay(timeout) {
 					return new Promise((resolve) => {
 						setTimeout(resolve, timeout);
@@ -199,7 +190,6 @@ export class RTCMocker {
 		});
 	};
 	handleIceCandidate = async (candidate: RTCIceCandidate) => {
-		console.log("Got ice candidate");
 		if (this.peerConnection) {
 			console.log("Adding ice candidate");
 			this.peerConnection.addIceCandidate(candidate);

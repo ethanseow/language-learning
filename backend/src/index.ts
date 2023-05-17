@@ -137,7 +137,7 @@ io.on("connection", (socket) => {
 			if ($pool) {
 			} else if ($room) {
 				const $roomUsers = await rooms.findUsersForRoom($room);
-				if ($roomUsers[userId].isActive) {
+				if ($roomUsers[userId]?.isActive) {
 					await rooms.rejoinRoom(userId);
 					const otherSocket = await rooms.findOtherUserInRoom(userId);
 					/*

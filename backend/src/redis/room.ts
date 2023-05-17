@@ -57,6 +57,7 @@ const findUsersForRoom = async (room: Room) => {
 			.return.first();
 		users[userId] = user;
 	});
+	console.log("users for findUsersForRoom", users);
 	return users;
 };
 
