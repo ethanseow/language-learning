@@ -12,12 +12,31 @@ const authCookie2 = "cookie2";
 const mocker1 = new RTCMocker(offering, seeking, userId1, authCookie1);
 const mocker2 = new RTCMocker(seeking, offering, userId2, authCookie2);
 let firstOne = true;
+const tests = {
+	0: "joins a filled pool, joins a room, RTCConnects, leaves, and rejoins",
+	1: "joins a filled pool, joins a room, RTCConnects, and leaves",
+	2: "joins empty meeting room",
+	3: "adds to pool redis and finds compatible user",
+	4: "joins and matches with user",
+	5: "joins, matches into a room, and establishes RTC connection",
+};
+const flags = {
+	"joins a filled pool, joins a room, RTCConnects, leaves, and rejoins": true,
+	"joins a filled pool, joins a room, RTCConnects, and leaves": true,
+	"joins empty meeting room": true,
+	"adds to pool redis and finds compatible user": true,
+	"joins and matches with user": true,
+	"joins, matches into a room, and establishes RTC connection": true,
+};
 describe("RTC user", function () {
 	this.timeout(5000);
 	this.beforeEach(async () => {
 		await pool.clearAll();
 		await room.clearAll();
 		if (firstOne) {
+			/*
+            we do not want to close peerConnection when we have not started anything
+            */
 			firstOne = false;
 			return;
 		}
@@ -28,64 +47,107 @@ describe("RTC user", function () {
 	const delay = (time) => {
 		return new Promise((resolve) => setTimeout(resolve, time));
 	};
-	it("joins a filled pool, joins a room, RTCConnects, leaves, and rejoins", function (done) {
-		const main = async () => {
-			mocker1.rtcConnect();
-			mocker1.socketConnect();
-			mocker1.waitForRoom();
-			await delay(250);
-			mocker2.rtcConnect();
-			mocker2.socketConnect();
-			mocker2.waitForRoom();
-			await delay(250);
+	flags[tests[0]] &&
+		it("joins a filled pool, joins a room, RTCConnects, leaves, and rejoins", function (done) {
+			const main = async () => {
+				mocker1.rtcConnect();
+				mocker1.socketConnect();
+				mocker1.waitForRoom();
+				await delay(250);
+				mocker2.rtcConnect();
+				mocker2.socketConnect();
+				mocker2.waitForRoom();
+				await delay(250);
 
-			const leaveRoom = () => {
-				return new Promise(async (resolve) => {
-					mocker1.leaveRoom();
-					await delay(250);
-					resolve(1);
+				const leaveRoom = () => {
+					return new Promise(async (resolve) => {
+						mocker1.disconnect();
+						await delay(250);
+						resolve(1);
+					});
+				};
+
+				const rejoinRoom = () => {
+					return new Promise(async (resolve) => {
+						mocker1.rtcConnect();
+						mocker1.socketConnect();
+						mocker1.waitForRoom();
+						await delay(250);
+						console.log(
+							"setTimeout - before finding valid room for userId1"
+						);
+						const r = await room.findRoomForUser(userId1);
+						console.log(
+							"setTimeout - after finding valid room for userId1"
+						);
+						console.log(
+							"setTimeout - before finding room users for r"
+						);
+						const roomUser = await room.findUsersForRoom(r);
+						console.log("setTimeout - room for userId1", r);
+						console.log(
+							"setTimeout - room.users for userId1",
+							r.users
+						);
+						console.log("setTimeout - roomUsers for r", roomUser);
+						console.log(
+							"setTimeout - after finding room users for r"
+						);
+						if (roomUser[userId1].isActive != true) {
+							console.log(
+								"roomUser for userId1 is active - FAILED"
+							);
+							return;
+						}
+						console.log("roomUser for userId1 is active - GOOD");
+						if (r.numInRoom != 2) {
+							console.log("num users in room is 2 - FAILED");
+							return;
+						}
+						console.log("num users in room is 2 - GOOD");
+						resolve(1);
+					});
+				};
+
+				const checkRTCs = () => {
+					console.log("Checking RTCs");
+					console.log(
+						`checkRTCs - ${mocker1.peerConnection.signalingState}`
+					);
+					if (mocker1.peerConnection.signalingState == "stable") {
+						console.log("mocker1 signaling state is GOOD");
+						if (
+							mocker1.peerConnection.connectionState ==
+							"connected"
+						) {
+							console.log("mocker1 connection state is GOOD");
+							if (
+								mocker2.peerConnection.signalingState ==
+								"stable"
+							) {
+								console.log("mocker2 signaling state is GOOD");
+								if (
+									mocker2.peerConnection.connectionState ==
+									"connected"
+								) {
+									console.log(
+										"mocker2 connection state is GOOD"
+									);
+									done();
+								}
+							}
+						}
+					}
+				};
+				leaveRoom().then(() => {
+					rejoinRoom().then(() => {
+						checkRTCs();
+					});
 				});
 			};
-
-			const rejoinRoom = () => {
-				return new Promise(async (resolve) => {
-					mocker1.rtcConnect();
-					mocker1.socketConnect();
-					mocker1.waitForRoom();
-					await delay(250);
-					console.log(
-						"setTimeout - before finding valid room for userId1"
-					);
-					const r = await room.findRoomForUser(userId1);
-					console.log(
-						"setTimeout - after finding valid room for userId1"
-					);
-					console.log("setTimeout - before finding room users for r");
-					const roomUser = await room.findUsersForRoom(r);
-					console.log("setTimeout - room for userId1", r);
-					console.log("setTimeout - room.users for userId1", r.users);
-					console.log("setTimeout - roomUsers for r", roomUser);
-					console.log("setTimeout - after finding room users for r");
-					if (roomUser[userId1].isActive != true) {
-						console.log("roomUser for userId1 is active - FAILED");
-						return;
-					}
-					console.log("roomUser for userId1 is active - GOOD");
-					if (r.numInRoom != 2) {
-						console.log("num users in room is 2 - FAILED");
-						return;
-					}
-					console.log("num users in room is 2 - GOOD");
-					done();
-				});
-			};
-			leaveRoom().then(() => {
-				rejoinRoom();
-			});
-		};
-		main();
-	});
-	false &&
+			main();
+		});
+	flags[tests[1]] &&
 		it("joins a filled pool, joins a room, RTCConnects, and leaves", function (done) {
 			const main = async () => {
 				mocker1.rtcConnect();
@@ -97,10 +159,14 @@ describe("RTC user", function () {
 				mocker2.waitForRoom();
 				await delay(250);
 
-				setTimeout(async () => {
-					mocker1.leaveRoom();
-					await delay(250);
-
+				const leaveRoom = () => {
+					return new Promise(async (resolve) => {
+						mocker1.disconnect();
+						await delay(250);
+						resolve(1);
+					});
+				};
+				const checkRoom = async () => {
 					console.log(
 						"setTimeout - before finding valid room for userId1"
 					);
@@ -121,11 +187,12 @@ describe("RTC user", function () {
 							done();
 						}
 					}
-				}, 3000);
+				};
+				leaveRoom().then(checkRoom);
 			};
 			main();
 		});
-	false &&
+	flags[tests[2]] &&
 		it("joins empty meeting room", async function () {
 			mocker1.socketConnect();
 			mocker1.waitForRoom();
@@ -133,7 +200,7 @@ describe("RTC user", function () {
 			const user1 = await pool.findUserInPool(userId1);
 			assert.equal(user1?.userId, userId1, "user1 id is correct");
 		});
-	false &&
+	flags[tests[3]] &&
 		it("adds to pool redis and finds compatible user", async () => {
 			const user1 = {
 				offering: "offering",
@@ -155,7 +222,7 @@ describe("RTC user", function () {
 				"found compatible other user"
 			);
 		});
-	false &&
+	flags[tests[4]] &&
 		it("joins and matches with user", async function () {
 			mocker1.rtcConnect();
 			mocker1.socketConnect();
@@ -187,7 +254,7 @@ describe("RTC user", function () {
 			expect(r.users).to.contain(userId1, "user1 is in the room");
 			expect(r.users).to.contain(userId2, "user2 is in the room");
 		});
-	false &&
+	flags[tests[5]] &&
 		it("joins, matches into a room, and establishes RTC connection", function (done) {
 			const main = async () => {
 				mocker1.rtcConnect();

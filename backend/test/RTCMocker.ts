@@ -46,7 +46,6 @@ export class RTCMocker {
 		this.seeking = seeking;
 		this.makingOffer = false;
 		this.createdRoomLatch = false;
-		this.peerConnection = new wrtc.RTCPeerConnection(servers);
 	}
 	setRTCConnectionState(state: string) {
 		this.RTCConnectionState = state;
@@ -61,22 +60,23 @@ export class RTCMocker {
 		this.RTCSignalingState = state;
 	}
 	rtcConnect() {
+		this.peerConnection = new wrtc.RTCPeerConnection(servers);
 		this.peerConnection.onsignalingstatechange = (e) => {
 			switch (this.peerConnection.signalingState) {
 				case "have-remote-offer":
 					this.setRTCSignalingState("stable");
 					break;
 				case "have-local-offer":
-					this.setRTCSignalingState("stable");
+					this.setRTCSignalingState("have-local-offer");
 					break;
 				case "closed":
-					this.setRTCSignalingState("stable");
+					this.setRTCSignalingState("closed");
 					break;
 				case "have-local-pranswer":
-					this.setRTCSignalingState("stable");
+					this.setRTCSignalingState("have-local-pranswer");
 					break;
 				case "have-remote-pranswer":
-					this.setRTCSignalingState("stable");
+					this.setRTCSignalingState("have-remote-pranswer");
 					break;
 				case "stable":
 					this.setRTCSignalingState("stable");
@@ -142,6 +142,8 @@ export class RTCMocker {
 				authCookie: this.cookie,
 			},
 		});
+		this.socket.connect();
+
 		this.socket.on(
 			SocketEmits.CREATED_ROOM,
 			async (data: JoinedRoomReq) => {
@@ -149,14 +151,8 @@ export class RTCMocker {
 			}
 		);
 
-		this.socket.on(SocketEmits.ASK_POLITENESS, async () => {
-			this.socket.emit(SocketEmits.ASK_POLITENESS, {
-				myPolite: this.polite,
-			});
-		});
-
 		this.socket.on(SocketEmits.REJOIN_ROOM, async (data: JoinedRoomReq) => {
-			await this.createOffer(data.isPolite);
+			await this.rejoinRoom(data.isPolite);
 		});
 
 		this.socket.on(SocketEmits.PARTNER_DISCONNECTED, async () => {
@@ -175,6 +171,17 @@ export class RTCMocker {
 		this.socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 			this.acceptAnswer(data.answer);
 		});
+	};
+
+	rejoinRoom = async (isPolite) => {
+		this.peerConnection.restartIce();
+		console.log(
+			"rejoinRoom - userId",
+			this.userId,
+			"signalingState",
+			this.peerConnection.signalingState
+		);
+		await this.createOffer(isPolite);
 	};
 	handleIceCandidate = async (candidate: RTCIceCandidate) => {
 		//console.log("userId:", this.userId, "handleIceCandidate triggered");
@@ -223,6 +230,7 @@ export class RTCMocker {
 		await this.peerConnection.setRemoteDescription(offer);
 		console.log("userId:", this.userId, "accepting offer");
 		let answer = await this.peerConnection.createAnswer();
+		console.log("userId:", this.userId, "after create answer");
 		await this.peerConnection.setLocalDescription(answer);
 
 		let data: SendAnswerReq = {
@@ -241,13 +249,15 @@ export class RTCMocker {
 	};
 	disconnect() {
 		if (this.socket) {
-			this.socket.close();
+			this.socket.disconnect();
 		}
 		if (this.peerConnection) {
 			this.peerConnection.close();
+			this.peerConnection.restartIce();
+			console.log(
+				"disconnect - signalingState",
+				this.peerConnection.signalingState
+			);
 		}
-	}
-	leaveRoom() {
-		this.disconnect();
 	}
 }

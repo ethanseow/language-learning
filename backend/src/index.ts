@@ -117,7 +117,8 @@ io.on("connection", (socket) => {
 						otherSocket
 					);
                     */
-					io.to(otherSocket.socketId).emit(SocketEmits.CREATED_ROOM, {
+					socket.join($room.id);
+					io.to(otherSocket.socketId).emit(SocketEmits.REJOIN_ROOM, {
 						roomId: $room.id,
 						isPolite: false,
 					});
@@ -198,6 +199,7 @@ io.on("connection", (socket) => {
 				authCookie
 			);
 		}
+		console.log("SocketEmits.EMIT_ANSWER - emitting answer", userId);
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
