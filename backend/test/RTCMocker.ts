@@ -1,5 +1,5 @@
 import { Socket, io } from "socket.io-client";
-import { SocketEmits } from "../../frontend/backend-api/sockets";
+import { SendDesc, SocketEmits } from "../../backend/src/sockets";
 import * as wrtc from "wrtc";
 import {
 	type JoinRoomReq,
@@ -52,11 +52,32 @@ export class RTCMocker {
 		this.RTCConnectionState = state;
 	}
 	setRTCSignalingState(state: string) {
+		console.log(
+			"userId:",
+			this.userId,
+			"setSignalingState triggered:",
+			state
+		);
 		this.RTCSignalingState = state;
 	}
 	rtcConnect() {
 		this.peerConnection.onsignalingstatechange = (e) => {
 			switch (this.peerConnection.signalingState) {
+				case "have-remote-offer":
+					this.setRTCSignalingState("stable");
+					break;
+				case "have-local-offer":
+					this.setRTCSignalingState("stable");
+					break;
+				case "closed":
+					this.setRTCSignalingState("stable");
+					break;
+				case "have-local-pranswer":
+					this.setRTCSignalingState("stable");
+					break;
+				case "have-remote-pranswer":
+					this.setRTCSignalingState("stable");
+					break;
 				case "stable":
 					this.setRTCSignalingState("stable");
 					break;
@@ -92,19 +113,55 @@ export class RTCMocker {
 		this.peerConnection.addEventListener(
 			"icecandidate",
 			(e: RTCPeerConnectionIceEvent) => {
-				console.log("userId:", this.userId, "onicecandidate triggered");
+				//console.log("userId:", this.userId, "onicecandidate triggered");
 				if (e.candidate) {
+					/*
 					console.log(
 						"userId:",
 						this.userId,
 						"sending ice candidate"
 					);
+                    */
 					this.socket.emit(SocketEmits.EMIT_CANDIDATE, {
 						candidate: e.candidate,
 					});
 				}
 			}
 		);
+		/*
+		this.peerConnection.onnegotiationneeded = async () => {
+			console.log("userId:", this.userId, `onnegotiation is triggered`);
+			this.makingOffer = false;
+			try {
+				this.makingOffer = true;
+				console.log(
+					"userId:",
+					this.userId,
+					`onnegotiation - setting localDescription`
+				);
+				const offer = await this.peerConnection.createOffer();
+				await this.peerConnection.setLocalDescription(offer);
+				const data: SendDesc = {
+					description: this.peerConnection.localDescription,
+				};
+				console.log(
+					"userId:",
+					this.userId,
+					`onnegotiation - sending localDesc`
+				);
+				this.socket.emit(SocketEmits.EMIT_DESC, data);
+			} catch (err) {
+				console.error(err);
+			} finally {
+				this.makingOffer = false;
+			}
+		};
+        */
+		this.peerConnection.oniceconnectionstatechange = () => {
+			if (this.peerConnection.iceConnectionState === "failed") {
+				this.peerConnection.restartIce();
+			}
+		};
 	}
 	socketConnect = async () => {
 		const COOKIE_NAME = "sid";
@@ -114,7 +171,6 @@ export class RTCMocker {
 				authCookie: this.cookie,
 			},
 		});
-		this.makingOffer = false;
 		this.socket.on(
 			SocketEmits.CREATED_ROOM,
 			async (data: JoinedRoomReq) => {
@@ -122,6 +178,30 @@ export class RTCMocker {
 				await this.createOffer(data.isPolite);
 			}
 		);
+
+		/*
+		this.socket.on(
+			SocketEmits.CREATED_ROOM,
+			async (data: JoinedRoomReq) => {
+				this.polite = data.isPolite;
+				//@ts-ignore
+				console.log(
+					"userId:",
+					this.userId,
+					`SocketEmits.CREATED_ROOM - adding new track`
+				);
+				console.log(
+					"userId:",
+					this.userId,
+					`SocketEmits.CREATED_ROOM - signalingState: ${this.peerConnection.signalingState}`
+				);
+				const dummyTransceiver =
+					this.peerConnection.addTransceiver("audio");
+				dummyTransceiver.direction = "sendrecv";
+				//await this.createDesc();
+			}
+		);
+        */
 
 		this.socket.on(SocketEmits.ASK_POLITENESS, async () => {
 			this.socket.emit(SocketEmits.ASK_POLITENESS, {
@@ -131,8 +211,17 @@ export class RTCMocker {
 
 		this.socket.on(SocketEmits.REJOIN_ROOM, async (data: JoinedRoomReq) => {
 			//@ts-ignore
-			this.createOffer(data.isPolite);
+			//this.createOffer(data.isPolite);
+			const dummyTransceiver =
+				this.peerConnection.addTransceiver("audio");
+			dummyTransceiver.direction = "sendrecv";
 		});
+
+		/*
+		this.socket.on(SocketEmits.EMIT_DESC, async (data: SendDesc) => {
+			this.handleSendDesc(data.description);
+		});
+        */
 		this.socket.on(
 			SocketEmits.EMIT_CANDIDATE,
 			async (data: CandidateFoundReq) => {
@@ -146,14 +235,94 @@ export class RTCMocker {
 			this.acceptAnswer(data.answer);
 		});
 	};
+	createDesc = async () => {
+		console.log("userId:", this.userId, `onnegotiation is triggered`);
+		this.makingOffer = false;
+		if (this.userId == "user1") {
+			return;
+		}
+		try {
+			this.makingOffer = true;
+			console.log(
+				"userId:",
+				this.userId,
+				`onnegotiation - setting localDescription`
+			);
+			const offer = await this.peerConnection.createOffer();
+			await this.peerConnection.setLocalDescription(offer);
+			const data: SendDesc = {
+				description: this.peerConnection.localDescription,
+			};
+			//this.socket.emit(SocketEmits.EMIT_DESC, data);
+		} catch (err) {
+			console.error(err);
+		} finally {
+			this.makingOffer = false;
+		}
+	};
+	handleSendDesc = async (description: RTCSessionDescriptionInit) => {
+		console.log("userId:", this.userId, "handleSendDesc is triggered");
+		const offerCollision =
+			description.type === "offer" &&
+			(this.makingOffer ||
+				this.peerConnection.signalingState !== "stable");
+
+		const ignoreOffer = !this.polite && offerCollision;
+		console.log(
+			"userId:",
+			this.userId,
+			`handleCollision - offerCollision ${offerCollision} - ignoreOffer ${ignoreOffer} - polite ${this.polite}`
+		);
+		if (ignoreOffer) {
+			return;
+		}
+
+		if (description.type === "offer") {
+			console.log(
+				"userId:",
+				this.userId,
+				`handleSendDesc - polite: ${this.polite} - setting localDescription`
+			);
+			if (this.peerConnection.localDescription) {
+				await this.peerConnection.setLocalDescription({
+					type: "rollback",
+				});
+				const answer = await this.peerConnection.createAnswer();
+				await this.peerConnection.setLocalDescription(answer);
+				const sendBackData: SendDesc = {
+					description: this.peerConnection.localDescription,
+				};
+				console.log(
+					"userId:",
+					this.userId,
+					`handleSendDesc - sending answer${answer}`
+				);
+				this.socket.emit(SocketEmits.EMIT_DESC, sendBackData);
+			}
+		} else if (description.type === "answer") {
+			console.log(
+				"userId:",
+				this.userId,
+				`handleSendDesc - before set remoteDescrition`
+			);
+			await this.peerConnection.setRemoteDescription(description);
+			console.log(
+				"userId:",
+				this.userId,
+				`handleSendDesc - after set remoteDescrition`
+			);
+		}
+	};
 	handleIceCandidate = async (candidate: RTCIceCandidate) => {
-		console.log("userId:", this.userId, "handleIceCandidate triggered");
+		//console.log("userId:", this.userId, "handleIceCandidate triggered");
 		if (this.peerConnection) {
+			/*
 			console.log(
 				"userId:",
 				this.userId,
 				"handleIceCandidate adding ice candidate"
 			);
+            */
 			this.peerConnection.addIceCandidate(candidate);
 		}
 	};
@@ -187,20 +356,6 @@ export class RTCMocker {
 	};
 
 	acceptOffer = async (offer: RTCSessionDescriptionInit) => {
-		/*
-		console.log("received an offer");
-		const offeringRightNow =
-			this.peerConnection.signalingState !== "stable" && this.makingOffer;
-		const denyOffer = this.polite == false && offeringRightNow;
-		console.log("denyOffer", denyOffer);
-		console.log("offeringRightNow", offeringRightNow);
-		if (denyOffer) {
-			console.log("Denied Offer");
-			return;
-		}
-		console.log("Accepted Offer");
-		this.makingOffer = false;
-        */
 		console.log("userId:", this.userId, "acceptOffer triggered");
 		await this.peerConnection.setRemoteDescription(offer);
 		console.log("userId:", this.userId, "accepting offer");

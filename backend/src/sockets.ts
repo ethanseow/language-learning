@@ -5,6 +5,7 @@ export enum SocketEmits {
 	EMIT_CANDIDATE = "emitCandidate",
 	EMIT_OFFER = "emitOffer",
 	EMIT_ANSWER = "emitAnswer",
+	EMIT_DESC = "emitDescription",
 	PARTNER_DISCONNECTED = "partnerDisconnected",
 	GET_ALL_MESSAGES = "getAllMessages",
 	SEND_MESSAGE = "sendMessage",
@@ -55,6 +56,10 @@ export interface SendOfferReq {
 
 export interface SendAnswerReq {
 	answer: RTCSessionDescriptionInit;
+}
+
+export interface SendDesc {
+	description: RTCSessionDescriptionInit;
 }
 
 export interface SocketUser {

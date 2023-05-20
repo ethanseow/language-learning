@@ -13,6 +13,7 @@ import {
 	SocketUser,
 	SocketNamespaces,
 	type Message,
+	SendDesc,
 } from "./sockets";
 import { type Room, type Pool, type UserLookup, UserPool, User } from "./types";
 import { Server, Socket } from "socket.io";
@@ -172,6 +173,21 @@ io.on("connection", (socket) => {
 		}
 	);
 
+	socket.on(SocketEmits.EMIT_DESC, async (data: SendDesc) => {
+		//@ts-ignore
+		const authCookie = socket.handshake.auth.authCookie;
+		const userId = req.session?.user?.userId;
+		if (!userId) {
+			console.log(
+				"SocketEmits.EMIT_DESC- no userId - session",
+				req.session,
+				"authCookie",
+				authCookie
+			);
+		}
+		const $room = await rooms.findRoomForUser(userId);
+		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_DESC, data);
+	});
 	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		//@ts-ignore
 		const authCookie = socket.handshake.auth.authCookie;
