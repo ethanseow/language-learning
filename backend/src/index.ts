@@ -112,21 +112,19 @@ io.on("connection", (socket) => {
 					await rooms.rejoinRoom(userId);
 					const otherSocket = await rooms.findOtherUserInRoom(userId);
 					/*
-					io.to(otherSocket.socketId).emit(
-						SocketEmits.ASK_POLITENESS,
-						{},
-						(isPolite: boolean) => {
-							const data: JoinedRoomReq = {
-								roomId: $room.id,
-								isPolite: !isPolite,
-							};
-							io.to(socket.id).emit(
-								SocketEmits.CREATED_ROOM,
-								data
-							);
-						}
+					console.log(
+						"SocketEmits.WAIT_FOR_ROOM - otherSocket",
+						otherSocket
 					);
                     */
+					io.to(otherSocket.socketId).emit(SocketEmits.CREATED_ROOM, {
+						roomId: $room.id,
+						isPolite: false,
+					});
+					io.to(socket.id).emit(SocketEmits.CREATED_ROOM, {
+						roomId: $room.id,
+						isPolite: true,
+					});
 				}
 			} else if (!$pool && !$room) {
 				const otherUser = await pool.getCompatibleUser(user);

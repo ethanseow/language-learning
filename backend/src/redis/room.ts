@@ -7,7 +7,7 @@ import {
 } from "./RoomSingleton";
 import { User } from "@/types";
 import { randomUUID } from "crypto";
-import _ from "lodash";
+import _, { keysIn } from "lodash";
 
 const createRoom = async (user1: User, user2: User): Promise<Room> => {
 	const roomRepository = await RoomRepository.getInstance();
@@ -62,16 +62,20 @@ const findUsersForRoom = async (room: Room) => {
 	return users;
 };
 
-const findOtherUserInRoom = async (userId: string): Promise<User | null> => {
+const findOtherUserInRoom = async (
+	userId: string
+): Promise<RoomUser | null> => {
 	const room = await findRoomForUser(userId);
 	if (room) {
 		const users = await findUsersForRoom(room);
-		Object.keys(users).forEach((k) => {
-			if (k != userId) {
-				const u = users[k];
+		//console.log("findOtherUserInRoom - roomUsers", users);
+		for (let key in users) {
+			if (key != userId) {
+				const u = users[key];
+				//console.log("findOtherUserInRoom - found other user", u);
 				return u;
 			}
-		});
+		}
 	} else {
 		return null;
 	}
