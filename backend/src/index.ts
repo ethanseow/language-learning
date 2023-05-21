@@ -334,9 +334,3 @@ app.post("/sessionLogin", (req, res) => {
 			}
 		);
 });
-
-/*
-server.listen(port, () => {
-	return console.log(`Express is listening at http://localhost:${port}`);
-});
-*/

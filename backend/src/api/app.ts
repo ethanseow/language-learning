@@ -46,6 +46,7 @@ const fbApp = initializeApp({
 const auth = getAuth(fbApp);
 
 app.post("/api/login", async (req, res) => {
+	console.log(`/api/login being called`);
 	const { token } = req.body;
 
 	const expiresIn = 60 * 60 * 24 * 5 * 1000;
@@ -57,11 +58,15 @@ app.post("/api/login", async (req, res) => {
 			secure: false,
 		};
 
+		console.log("/api/login - before create session cookie");
 		const authCookie = await auth.createSessionCookie(token, {
 			expiresIn,
 		});
+		console.log("/api/login - after create session cookie");
 		console.log("Cookie:", authCookie);
+		console.log("/api/login - before res cookie");
 		res.cookie("authCookie", authCookie, options);
+		console.log("/api/login - after res cookie");
 		res.end(JSON.stringify({ status: "success" }));
 	} catch (err) {
 		throw { statusCode: 401, statusMessage: "Unauthorized" };

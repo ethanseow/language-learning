@@ -8,7 +8,7 @@ import {
 	type CandidateFoundReq,
 	type SendOfferReq,
 	type SendAnswerReq,
-} from "../../frontend/backend-api/sockets";
+} from "../../frontend/constants/sockets";
 import consts from "./../src/consts";
 const servers = {
 	iceServers: [
