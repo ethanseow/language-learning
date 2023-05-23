@@ -1,25 +1,6 @@
 <template>
-	<!---
-	<div
-		class="flex flex-row items-center justify-center bg-tertiary pt-5 px-16 pb-5"
-	>
-		<LogoText />
-		<div class="grow"></div>
-		<div class="flex flex-row gap-8 text-2xl font-semibold">
-			<h1>FAQ</h1>
-			<AuthWrapper>
-				<template v-slot:unauth></template>
-				<template v-slot:auth>
-					<NuxtLink to="/dashboard"> Dashboard </NuxtLink>
-				</template>
-			</AuthWrapper>
-			<AuthWrapper>
-				<template v-slot:unauth>You are not logged in</template>
-				<template v-slot:auth>You are logged in</template>
-			</AuthWrapper>
-		</div>
-	</div>
-    -->
+	<!--
+
 	<div class="flex flex-row w-full px-16 mt-5 text-6xl items-center">
 		<div>
 			<div class="text-6xl font-bold text-secondary">
@@ -41,11 +22,6 @@
 			<img src="/img/stock/voice-call.jpg" />
 		</div>
 	</div>
-	<!--
-		<div
-			class="px-3 mt-10 bg-secondary w-screen h-[15vh] relative left-0 top-0"
-		></div>
-        -->
 	<div
 		class="text-5xl font-semibold items-center mt-10 text-center mx-auto w-1/2"
 	>
@@ -102,13 +78,10 @@
 			</h2>
 		</div>
 	</div>
+    -->
 </template>
 
-<script setup lang="ts">
-import axios from "axios";
-
-const apiUrl = useRuntimeConfig().public.apiBase;
-</script>
+<script setup lang="ts"></script>
 <style scoped>
 .how-to {
 	width: 33%;

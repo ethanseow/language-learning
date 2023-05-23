@@ -1,9 +1,6 @@
 import { defineConfig } from "cypress";
-import consts from "./consts";
-import { RTCMocker } from "../backend/test/RTCMocker";
 import * as dotenv from "dotenv";
 import room from "@/redis/room";
-dotenv.config({ path: "./.env" });
 export default defineConfig({
 	env: {
 		apiKey: process.env.NUXT_PUBLIC_API_KEY,
@@ -30,16 +27,12 @@ export default defineConfig({
 			on("task", {
 				clearRoom() {
 					room.clearAll();
-				},
-				/*
-				connectToPeer() {
-					mocker.waitForRoom();
 					return null;
 				},
-				checkConnectionStatus() {
-					return mocker.peerConnection.iceConnectionState;
+				log(message) {
+					console.log(message);
+					return null;
 				},
-                */
 			});
 		},
 	},

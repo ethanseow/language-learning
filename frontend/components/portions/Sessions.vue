@@ -15,6 +15,7 @@
 				<th v-else></th>
 			</tr>
 			<tr
+				:id="session.id"
 				:key="session.id"
 				v-for="session in sortedSessions"
 				class="bg-gray-400"
@@ -64,6 +65,7 @@
 					<div v-else class="text-black font-thin">N/A</div>
 				</td>
 				<td
+					:id="`${session.id}-join-meeting`"
 					v-if="!props.usePastSession"
 					class="flex flex-row justify-center"
 				>
@@ -126,6 +128,7 @@ const getDateTimeString = (date: Date) => {
 	)}`;
 };
 const allowMeetingRoom = (date: Date) => {
+	return true;
 	const rightNow = new Date();
 
 	// issue - should be 5 instead of 60 here

@@ -2,6 +2,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import cors from "cors";
+import jwt_decode from "jwt-decode";
 import bodyParser from "body-parser";
 import {
 	JoinRoomReq,
@@ -52,9 +53,24 @@ export const io = new Server(server, {
 
 io.engine.use(sessionMiddleware);
 
+/*
 const cookieLookup = {
 	cookie1: "user1",
 	cookie2: "2user",
+};
+*/
+
+const cookieLookup = (cookie: string) => {
+	if (cookie == "cookie1") {
+		return "user1";
+	}
+	if (cookie == "cookie2") {
+		return "2user";
+	}
+	const decoded = jwt_decode(cookie);
+	//@ts-ignore
+	const uid: string = decoded.user_id;
+	return uid;
 };
 
 io.on("connection", (socket) => {
@@ -62,16 +78,18 @@ io.on("connection", (socket) => {
 	const req = socket.request;
 	socket.use((__, next) => {
 		const authCookie = socket.handshake.auth.authCookie;
-		console.log("in socket.use middleware - retrieved cookie", authCookie);
+		//console.log("in socket.use middleware - retrieved cookie", authCookie);
 		if (authCookie && !req.session.user) {
-			req.session.user = { userId: cookieLookup[authCookie] };
+			req.session.user = { userId: cookieLookup(authCookie) };
 			req.session.save();
+			/*
 			console.log(
 				"In socket.use middleware - setting session",
 				req.session,
 				"for cookie",
 				authCookie
 			);
+            */
 		}
 		next();
 	});
@@ -179,9 +197,9 @@ io.on("connection", (socket) => {
 		if (!userId) {
 			console.log(
 				"SocketEmits.EMIT_DESC- no userId - session",
-				req.session,
-				"authCookie",
-				authCookie
+				//req.session,
+				"authCookie"
+				//authCookie
 			);
 		}
 		const $room = await rooms.findRoomForUser(userId);
@@ -194,9 +212,9 @@ io.on("connection", (socket) => {
 		if (!userId) {
 			console.log(
 				"SocketEmits.EMIT_ANSWER - no userId - session",
-				req.session,
-				"authCookie",
-				authCookie
+				//req.session,
+				"authCookie"
+				//authCookie
 			);
 		}
 		console.log("SocketEmits.EMIT_ANSWER - emitting answer", userId);
@@ -209,9 +227,9 @@ io.on("connection", (socket) => {
 		if (!userId) {
 			console.log(
 				"SocketEmits.EMIT_CANDIDATE- no userId - session",
-				req.session,
-				"authCookie",
-				authCookie
+				//req.session,
+				"authCookie"
+				//authCookie
 			);
 		}
 		const $room = await rooms.findRoomForUser(userId);

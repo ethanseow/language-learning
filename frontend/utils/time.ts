@@ -103,6 +103,23 @@ export const roundHourDown = (date: Date) => {
 		0
 	);
 };
+
+export function roundDownToHalfHour(date: Date) {
+	var roundedDate = new Date(date); // Create a new Date object with the same value as the input date
+
+	roundedDate.setMilliseconds(0);
+	roundedDate.setSeconds(0);
+
+	var minutes = roundedDate.getMinutes();
+	if (minutes > 30) {
+		roundedDate.setMinutes(30); // Round down to the previous half-hour
+	} else {
+		roundedDate.setMinutes(0); // Round down to the current hour
+	}
+
+	return roundedDate;
+}
+
 export const getDayBefore = (date: Date) => {
 	var today = new Date();
 	var yesterday = new Date(today);

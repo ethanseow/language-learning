@@ -17,7 +17,8 @@ export const useAuth = () => {
 		message: "",
 	});
 	const isLoggedIn = useState("isLoggedIn", () => false);
-	const user: Ref<User> = useState("user", () => {});
+	//@ts-ignore
+	const user: Ref<User | null> = useState("user", () => {});
 	const apiUrl = useRuntimeConfig().public.apiBase;
 	const createCookie = (token: string) => {
 		axios
@@ -45,9 +46,13 @@ export const useAuth = () => {
 			const result = await signInWithPopup(auth, provider);
 			const token = await result.user.getIdToken();
 			user.value = await createOrGetUser(result.user);
+			console.log("signIn - user", user.value);
 			createCookie(token);
 			isLoggedIn.value = true;
-			navigateTo(urlConsts.DASHBOARD);
+			if (user.value) {
+				useSessionStore().retrieveAllSessions(user.value);
+				navigateTo(urlConsts.DASHBOARD);
+			}
 		} catch (e) {
 			console.log(e);
 			error.value = {
@@ -64,6 +69,9 @@ export const useAuth = () => {
 			.then((res) => {
 				user.value = null;
 				isLoggedIn.value = false;
+				const session = useSessionStore();
+				session.setPastSessions([]);
+				session.setUpcomingSessions([]);
 				navigateTo("/");
 			});
 	}

@@ -15,7 +15,7 @@ class RoomUser extends Entity {
 	userId: string;
 	isActive: boolean;
 }
-const roomUserSchema = new Schema(RoomUser, {
+export const roomUserSchema = new Schema(RoomUser, {
 	offering: { type: "string" },
 	seeking: { type: "string" },
 	socketId: { type: "string" },
@@ -23,7 +23,7 @@ const roomUserSchema = new Schema(RoomUser, {
 	isActive: { type: "boolean" },
 });
 
-const roomSchema = new Schema(Room, {
+export const roomSchema = new Schema(Room, {
 	id: { type: "string" },
 	users: { type: "string[]", indexed: true },
 	numInRoom: { type: "number" },

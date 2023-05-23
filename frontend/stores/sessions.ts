@@ -10,6 +10,7 @@ import {
 	where,
 } from "firebase/firestore";
 import { Auth } from "firebase/auth";
+import { type User } from "~~/utils/firebase";
 import { createSession } from "~~/utils/firebase";
 import _ from "lodash";
 export interface Session {
@@ -56,6 +57,23 @@ export const useSessionStore = defineStore("sessionStore", () => {
 	const setPastSessions = (sessions: Session[]) => {
 		pastSessions.value = _.cloneDeep(sessions);
 	};
+	const retrieveAllSessions = async (user: User) => {
+		const nuxtApp = useNuxtApp();
+		const upcomingSessions = await getSessions(
+			nuxtApp.$firestore,
+			false,
+			user.uid
+		);
+		const pastSessions = await getSessions(
+			nuxtApp.$firestore,
+			true,
+			user.uid
+		);
+		setPastSessions(pastSessions);
+		setUpcomingSessions(upcomingSessions);
+	};
+	// clear all sessions from store
+
 	// need to think about this - cannot have it check every single time when user changes
 	return {
 		pastSessions,
@@ -63,5 +81,6 @@ export const useSessionStore = defineStore("sessionStore", () => {
 		addUpcomingSessions,
 		setUpcomingSessions,
 		setPastSessions,
+		retrieveAllSessions,
 	};
 });

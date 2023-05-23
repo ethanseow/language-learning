@@ -87,9 +87,7 @@ export const userConverter = {
 		};
 	},
 };
-export const test = async (f: Firestore) => {
-	collection(f, "sessions");
-};
+
 export const getSessions = async (
 	firestore: Firestore,
 	isPast: boolean,
@@ -113,7 +111,7 @@ export const getSessions = async (
 };
 
 // write a unit test for this
-export const userHasMatchingSession = async (
+export const userHasSession = async (
 	firestore: Firestore,
 	userId: string,
 	offering: string,

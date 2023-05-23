@@ -1,5 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
 	function isLanguage(str: string): boolean {
+		//@ts-ignore
 		return Object.values(Languages).includes(str);
 	}
 	const auth = useAuth();
@@ -18,15 +19,18 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 			statusMessage: "Not a valid offering/seeking",
 		});
 	}
-	const rightNow = roundHourDown(new Date());
-	/*const session = await userHasMatchingSession(
+	const rightNow = roundDownToHalfHour(new Date());
+	const session = await userHasSession(
 		nuxtApp.$firestore,
+		// @ts-ignore
 		auth.user.value.uid,
 		offering,
 		seeking,
 		rightNow
 	);
-	if (session) {
+	/*
+    uncomment to enable session time check
+	if (!session) {
 		return createError({
 			statusCode: 404,
 			statusMessage: "Meeting time is incorrect",

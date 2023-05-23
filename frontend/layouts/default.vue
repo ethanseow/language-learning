@@ -1,18 +1,19 @@
 <template>
 	<div>
 		<LoginModal :toggleModal="modal.closeModal" v-if="modal.showModal" />
-		<HeaderVue />
+		<Header />
 		<slot></slot>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { Pinia } from "pinia";
-import HeaderVue from "~~/components/portions/Header.vue";
+import Header from "~~/components/portions/Header.vue";
 import { getSessions } from "~~/utils/firebase";
 const modal = useLoginModalUIStore();
 const auth = useAuth();
 const sessions = useSessionStore();
+/*
 watch(auth.isLoggedIn, async (newIsLoggedIn, oldIsLoggedIn) => {
 	const nuxtApp = useNuxtApp();
 	// not logged in at all
@@ -41,25 +42,5 @@ watch(auth.isLoggedIn, async (newIsLoggedIn, oldIsLoggedIn) => {
 		sessions.setUpcomingSessions(upcomingSessions);
 	}
 });
-/*
-const handler = async () => {
-	const nuxtApp = useNuxtApp();
-	await auth.initAuth();
-	const upcomingSessions = await getSessions(
-		nuxtApp.$firestore,
-		false,
-		auth.user.value.uid
-	);
-	const pastSessions = await getSessions(
-		nuxtApp.$firestore,
-		true,
-		auth.user.value.uid
-	);
-	sessions.setPastSessions(pastSessions);
-	sessions.setUpcomingSessions(upcomingSessions);
-};
-if (process.server) {
-	await handler();
-}
 */
 </script>

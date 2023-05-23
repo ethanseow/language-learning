@@ -6,6 +6,9 @@ import bodyParser from "body-parser";
 import session, { Session, SessionOptions, Store } from "express-session";
 import type { IncomingHttpHeaders, IncomingMessage } from "http";
 import { app as firebaseApp, analytics } from "@/firebase";
+
+var serviceAccount = require("../../serviceAccount.json");
+
 import http from "http";
 import dotenv from "dotenv";
 
@@ -39,8 +42,10 @@ const certs = {
 	projectId: process.env.FB_ADMIN_PROJECT_ID,
 };
 
+//console.log("certs:", certs);
+
 const fbApp = initializeApp({
-	credential: cert(certs),
+	credential: cert(serviceAccount),
 });
 
 const auth = getAuth(fbApp);
@@ -49,7 +54,7 @@ app.post("/api/login", async (req, res) => {
 	console.log(`/api/login being called`);
 	const { token } = req.body;
 
-	const expiresIn = 60 * 60 * 24 * 5 * 1000;
+	const expiresIn = 60 * 60 * 60 * 1000 * 5;
 
 	try {
 		const options = {
@@ -59,15 +64,19 @@ app.post("/api/login", async (req, res) => {
 		};
 
 		console.log("/api/login - before create session cookie");
-		const authCookie = await auth.createSessionCookie(token, {
-			expiresIn,
-		});
-		console.log("/api/login - after create session cookie");
-		console.log("Cookie:", authCookie);
-		console.log("/api/login - before res cookie");
-		res.cookie("authCookie", authCookie, options);
-		console.log("/api/login - after res cookie");
-		res.end(JSON.stringify({ status: "success" }));
+		try {
+			const authCookie = await auth.createSessionCookie(token, {
+				expiresIn,
+			});
+			console.log("/api/login - after create session cookie");
+			console.log("Cookie:", authCookie);
+			console.log("/api/login - before res cookie");
+			res.cookie("authCookie", authCookie, options);
+			console.log("/api/login - after res cookie");
+			res.end(JSON.stringify({ status: "success" }));
+		} catch (err) {
+			console.log("err", err);
+		}
 	} catch (err) {
 		throw { statusCode: 401, statusMessage: "Unauthorized" };
 	}
