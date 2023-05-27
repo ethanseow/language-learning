@@ -2,7 +2,6 @@ import { defineConfig } from "cypress";
 import consts from "./consts";
 import { RTCMocker } from "../backend/test/RTCMocker";
 import * as dotenv from "dotenv";
-import room from "@/redis/room";
 dotenv.config({ path: "./.env" });
 export default defineConfig({
 	env: {

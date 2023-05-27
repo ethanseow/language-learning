@@ -20,11 +20,19 @@ const servers = {
 	],
 };
 
+export type Message = {
+	message: string;
+	isMine: boolean;
+};
+
 export class RTCMocker {
 	//@ts-ignore
 	socket: Socket;
 	//@ts-ignore
 	peerConnection: RTCPeerConnection;
+	//@ts-ignore
+	rtcMessageChannel: RTCDataChannel;
+	messages: Message[];
 	userId: string;
 	offering: string;
 	seeking: string;
@@ -42,6 +50,7 @@ export class RTCMocker {
 		this.userId = userId;
 		this.offering = offering;
 		this.seeking = seeking;
+		this.messages = [];
 	}
 	setRTCConnectionState(state: string) {
 		this.RTCConnectionState = state;
@@ -55,12 +64,31 @@ export class RTCMocker {
 		);
 		this.RTCSignalingState = state;
 	}
+	rtcSendMessage(message: string) {
+		const msg = { isMine: true, message };
+		if (this.rtcMessageChannel) {
+			this.rtcMessageChannel.send(message);
+		}
+		this.messages.push(msg);
+	}
+	rtcMessageChannelInit() {
+		console.log("rtcMessageChannel initialized - I am", this.userId);
+		if (this.rtcMessageChannel) {
+			this.rtcMessageChannel.onmessage = (e: MessageEvent) => {
+				console.log(
+					"rtcMessageChannel.onMessage - received message from",
+					e.origin
+				);
+				this.messages.push({ isMine: false, message: e.data });
+			};
+		}
+	}
 	rtcConnect() {
 		this.peerConnection = new RTCPeerConnection(servers);
 		this.peerConnection.onsignalingstatechange = (e) => {
 			switch (this.peerConnection.signalingState) {
 				case "have-remote-offer":
-					this.setRTCSignalingState("hate-remote-offer");
+					this.setRTCSignalingState("have-remote-offer");
 					break;
 				case "have-local-offer":
 					this.setRTCSignalingState("have-local-offer");
@@ -130,7 +158,13 @@ export class RTCMocker {
 				this.peerConnection.restartIce();
 			}
 		};
+		this.peerConnection.ondatachannel = (e) => {
+			console.log("peerConnection.ondatachannel - I am", this.userId);
+			this.rtcMessageChannel = e.channel;
+			this.rtcMessageChannelInit();
+		};
 	}
+
 	socketConnect = async () => {
 		const COOKIE_NAME = "sid";
 		this.socket = io(consts.SOCKET_URL, {
@@ -208,6 +242,9 @@ export class RTCMocker {
 		console.log("userId:", this.userId, "createOffer triggered");
 		if (isPolite) {
 			console.log("userId:", this.userId, "creating offer and localDesc");
+			this.rtcMessageChannel =
+				this.peerConnection.createDataChannel("messaging-channel");
+			this.rtcMessageChannelInit();
 			const offer = await this.peerConnection.createOffer({
 				offerToReceiveAudio: true,
 				offerToReceiveVideo: true,
@@ -235,6 +272,12 @@ export class RTCMocker {
 		};
 		this.socket.emit(SocketEmits.EMIT_ANSWER, data);
 	};
+	isFullyConnected() {
+		return (
+			this.peerConnection?.connectionState == "connected" &&
+			this.peerConnection?.signalingState == "stable"
+		);
+	}
 	waitForRoom = async () => {
 		const data: JoinRoomReq = {
 			userId: this.userId,
@@ -248,6 +291,7 @@ export class RTCMocker {
 			this.socket.disconnect();
 		}
 		if (this.peerConnection) {
+			this.rtcMessageChannel.close();
 			this.peerConnection.close();
 			this.peerConnection.restartIce();
 			console.log(
@@ -255,5 +299,6 @@ export class RTCMocker {
 				this.peerConnection.signalingState
 			);
 		}
+		this.messages = [];
 	}
 }

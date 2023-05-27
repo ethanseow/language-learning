@@ -7,7 +7,7 @@
 			<p class="text-xl">Finding Available Partners</p>
 			<LoadingSpinner />
 		</div>
-		<div class="text-black flex flex-col items-center">
+		<div class="text-white flex flex-col items-center">
 			<div>Meeting Room</div>
 			<div id="videos">
 				<video
@@ -34,13 +34,12 @@
 			</div>
 		</div>
 		<!--
-			<button class="p-4 bg-blue-600" @click="endMeeting">
-				End Meeting
-			</button>
+		<button class="p-4 bg-blue-600" @click="endMeeting">End Meeting</button>
+        -->
 		<div class="flex flex-col w-full">
 			<div class="grow bg-slate-500 h-[90%]">
 				<Message
-					v-for="message in allMessages"
+					v-for="message in rtc.messages"
 					:message="message"
 				></Message>
 			</div>
@@ -57,7 +56,6 @@
 				</button>
 			</div>
 		</div>
-        -->
 	</div>
 </template>
 
@@ -65,6 +63,15 @@
 import { connect } from "socket.io-client";
 import { RTCMocker } from "~~/utils/RTCMocker";
 
+const message = ref("");
+const sendMessage = () => {
+	if (/^\s*$/.test(message.value)) {
+		// when only white space or completely blank
+	} else {
+		rtc.rtcSendMessage(message.value);
+	}
+	message.value = "";
+};
 definePageMeta({
 	middleware: ["auth", "user-meetings"],
 });
