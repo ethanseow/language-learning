@@ -19,14 +19,17 @@ const tests = {
 	3: "adds to pool redis and finds compatible user",
 	4: "joins and matches with user",
 	5: "joins, matches into a room, and establishes RTC connection",
+	6: "joins a room and messages",
 };
 const flags = {
-	"joins a filled pool, joins a room, RTCConnects, leaves, and rejoins": true,
-	"joins a filled pool, joins a room, RTCConnects, and leaves": true,
-	"joins empty meeting room": true,
-	"adds to pool redis and finds compatible user": true,
-	"joins and matches with user": true,
-	"joins, matches into a room, and establishes RTC connection": true,
+	"joins a filled pool, joins a room, RTCConnects, leaves, and rejoins":
+		false,
+	"joins a filled pool, joins a room, RTCConnects, and leaves": false,
+	"joins empty meeting room": false,
+	"adds to pool redis and finds compatible user": false,
+	"joins and matches with user": false,
+	"joins, matches into a room, and establishes RTC connection": false,
+	"joins a room and messages": true,
 };
 describe("RTC user", function () {
 	this.timeout(5000);
@@ -286,5 +289,34 @@ describe("RTC user", function () {
 				}, 3000);
 			};
 			main();
+		});
+	flags[tests[6]] &&
+		it(tests[6], async function () {
+			mocker1.rtcConnect();
+			mocker1.socketConnect();
+			mocker1.waitForRoom();
+			await delay(1000);
+			mocker2.rtcConnect();
+			mocker2.socketConnect();
+			mocker2.waitForRoom();
+			await delay(1000);
+
+			const message = "this is a message";
+			const messageObjUser1 = {
+				message,
+				isMine: true,
+			};
+			const messageObjUser2 = {
+				message,
+				isMine: false,
+			};
+			mocker1.rtcSendMessage(message);
+			await delay(10);
+			console.log("mocker1", mocker1.messages);
+			console.log("mocker2", mocker2.messages);
+			expect(mocker1.rtcMessageChannel).to.exist;
+			expect(mocker2.rtcMessageChannel).to.exist;
+			expect(mocker2.messages).to.deep.include(messageObjUser2);
+			expect(mocker1.messages).to.deep.include(messageObjUser1);
 		});
 });

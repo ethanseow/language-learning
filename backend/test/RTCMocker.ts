@@ -21,9 +21,16 @@ const servers = {
 	],
 };
 
+type Message = {
+	message: string;
+	isMine: boolean;
+};
+
 export class RTCMocker {
 	socket: Socket;
 	peerConnection: RTCPeerConnection;
+	rtcMessageChannel: RTCDataChannel;
+	messages: Message[];
 	userId: string;
 	offering: string;
 	seeking: string;
@@ -46,6 +53,7 @@ export class RTCMocker {
 		this.seeking = seeking;
 		this.makingOffer = false;
 		this.createdRoomLatch = false;
+		this.messages = [];
 	}
 	setRTCConnectionState(state: string) {
 		this.RTCConnectionState = state;
@@ -58,6 +66,25 @@ export class RTCMocker {
 			state
 		);
 		this.RTCSignalingState = state;
+	}
+	rtcSendMessage(message: string) {
+		const msg = { isMine: true, message };
+		if (this.rtcMessageChannel) {
+			this.rtcMessageChannel.send(message);
+		}
+		this.messages.push(msg);
+	}
+	rtcMessageChannelInit() {
+		console.log("rtcMessageChannel initialized - I am", this.userId);
+		if (this.rtcMessageChannel) {
+			this.rtcMessageChannel.onmessage = (e: MessageEvent) => {
+				console.log(
+					"rtcMessageChannel.onMessage - received message from",
+					e.origin
+				);
+				this.messages.push({ isMine: false, message: e.data });
+			};
+		}
 	}
 	rtcConnect() {
 		this.peerConnection = new wrtc.RTCPeerConnection(servers);
@@ -133,7 +160,13 @@ export class RTCMocker {
 				this.peerConnection.restartIce();
 			}
 		};
+		this.peerConnection.ondatachannel = (e) => {
+			console.log("peerConnection.ondatachannel - I am", this.userId);
+			this.rtcMessageChannel = e.channel;
+			this.rtcMessageChannelInit();
+		};
 	}
+
 	socketConnect = async () => {
 		const COOKIE_NAME = "sid";
 		this.socket = io(consts.SOCKET_URL, {
@@ -204,8 +237,8 @@ export class RTCMocker {
 				this.userId,
 				"accepting answer and setRemoteDescription(answer)"
 			);
-			this.peerConnection.setRemoteDescription(answer);
-			this.makingOffer = false;
+
+			await this.peerConnection.setRemoteDescription(answer);
 		}
 	};
 	createOffer = async (isPolite) => {
@@ -213,6 +246,9 @@ export class RTCMocker {
 		if (isPolite) {
 			console.log("userId:", this.userId, "creating offer and localDesc");
 			this.makingOffer = true;
+			this.rtcMessageChannel =
+				this.peerConnection.createDataChannel("messaging-channel");
+			this.rtcMessageChannelInit();
 			const offer = await this.peerConnection.createOffer({
 				offerToReceiveAudio: true,
 			});
@@ -239,6 +275,12 @@ export class RTCMocker {
 		};
 		this.socket.emit(SocketEmits.EMIT_ANSWER, data);
 	};
+	isFullyConnected() {
+		return (
+			this.peerConnection?.connectionState == "connected" &&
+			this.peerConnection?.signalingState == "stable"
+		);
+	}
 	waitForRoom = async () => {
 		const data: JoinRoomReq = {
 			userId: this.userId,

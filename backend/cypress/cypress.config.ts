@@ -1,6 +1,7 @@
 import { defineConfig } from "cypress";
 import * as dotenv from "dotenv";
 import room from "@/redis/room";
+import pool from "@/redis/pool";
 export default defineConfig({
 	env: {
 		apiKey: process.env.NUXT_PUBLIC_API_KEY,
@@ -27,6 +28,10 @@ export default defineConfig({
 			on("task", {
 				clearRoom() {
 					room.clearAll();
+					return null;
+				},
+				clearPool() {
+					pool.clearAll();
 					return null;
 				},
 				log(message) {

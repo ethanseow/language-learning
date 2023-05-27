@@ -1,0 +1,5 @@
+cd backend && npm run dev
+cd frontend &&  npm run dev
+cd backend && npx cypress open --config-file ./cypress/cypress.config.ts 
+
+create a new session and copy that session's id in the elemtn
