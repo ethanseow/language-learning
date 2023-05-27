@@ -318,5 +318,22 @@ describe("RTC user", function () {
 			expect(mocker2.rtcMessageChannel).to.exist;
 			expect(mocker2.messages).to.deep.include(messageObjUser2);
 			expect(mocker1.messages).to.deep.include(messageObjUser1);
+
+			const message2 = "this is message 2";
+			const message2ObjUser1 = {
+				message: message2,
+				isMine: false,
+			};
+			const message2ObjUser2 = {
+				isMine: true,
+				message: message2,
+			};
+
+			mocker2.rtcSendMessage(message2);
+			await delay(100);
+			console.log("mocker1", mocker1.messages);
+			console.log("mocker2", mocker2.messages);
+			expect(mocker2.messages).to.deep.include(message2ObjUser2);
+			expect(mocker1.messages).to.deep.include(message2ObjUser1);
 		});
 });
