@@ -34,13 +34,10 @@ export class RTCMocker {
 	userId: string;
 	offering: string;
 	seeking: string;
-	partnerId: string | null;
-	polite: boolean;
-	makingOffer: boolean;
-	RTCSignalingState: string;
-	RTCConnectionState: string;
+	partnerId: string | null | undefined;
+	RTCSignalingState: string | undefined;
+	RTCConnectionState: string | undefined;
 	cookie: string;
-	createdRoomLatch: boolean;
 	constructor(
 		offering: string,
 		seeking: string,
@@ -51,8 +48,6 @@ export class RTCMocker {
 		this.userId = userId;
 		this.offering = offering;
 		this.seeking = seeking;
-		this.makingOffer = false;
-		this.createdRoomLatch = false;
 		this.messages = [];
 	}
 	setRTCConnectionState(state: string) {
@@ -91,7 +86,7 @@ export class RTCMocker {
 		this.peerConnection.onsignalingstatechange = (e) => {
 			switch (this.peerConnection.signalingState) {
 				case "have-remote-offer":
-					this.setRTCSignalingState("stable");
+					this.setRTCSignalingState("have-remote-offer");
 					break;
 				case "have-local-offer":
 					this.setRTCSignalingState("have-local-offer");
@@ -112,6 +107,7 @@ export class RTCMocker {
 					break;
 			}
 		};
+		this.peerConnection.ontrack = (e) => {};
 		// not being called because we are not sending anything over?
 		this.peerConnection.onconnectionstatechange = (e) => {
 			switch (this.peerConnection.connectionState) {
@@ -206,7 +202,7 @@ export class RTCMocker {
 		});
 	};
 
-	rejoinRoom = async (isPolite) => {
+	rejoinRoom = async (isPolite: boolean) => {
 		this.peerConnection.restartIce();
 		console.log(
 			"rejoinRoom - userId",
@@ -237,20 +233,19 @@ export class RTCMocker {
 				this.userId,
 				"accepting answer and setRemoteDescription(answer)"
 			);
-
-			await this.peerConnection.setRemoteDescription(answer);
+			this.peerConnection.setRemoteDescription(answer);
 		}
 	};
-	createOffer = async (isPolite) => {
+	createOffer = async (isPolite: boolean) => {
 		console.log("userId:", this.userId, "createOffer triggered");
 		if (isPolite) {
 			console.log("userId:", this.userId, "creating offer and localDesc");
-			this.makingOffer = true;
 			this.rtcMessageChannel =
 				this.peerConnection.createDataChannel("messaging-channel");
 			this.rtcMessageChannelInit();
 			const offer = await this.peerConnection.createOffer({
 				offerToReceiveAudio: true,
+				offerToReceiveVideo: true,
 			});
 			await this.peerConnection.setLocalDescription(offer);
 			const data: SendOfferReq = {
