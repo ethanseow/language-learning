@@ -67,6 +67,7 @@ const cookieLookup = (cookie: string) => {
 	if (cookie == "cookie2") {
 		return "2user";
 	}
+	console.log("cookieLookup - cookie", cookie);
 	const decoded = jwt_decode(cookie);
 	//@ts-ignore
 	const uid: string = decoded.user_id;

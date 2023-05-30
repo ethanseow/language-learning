@@ -64,7 +64,10 @@ export class RTCMocker {
 	}
 	rtcSendMessage(message: string) {
 		const msg = { isMine: true, message };
+		console.log("rtcSendMessage backend - sending message triggerd");
+		console.log("rtcSendmessage data channel", this.rtcMessageChannel);
 		if (this.rtcMessageChannel) {
+			console.log("rtcSendMessage backend - sending message");
 			this.rtcMessageChannel.send(message);
 		}
 		this.messages.push(msg);
@@ -78,6 +81,10 @@ export class RTCMocker {
 					e.origin
 				);
 				this.messages.push({ isMine: false, message: e.data });
+				console.log(
+					"rtcMessageChannel.onMessage - messages",
+					this.messages
+				);
 			};
 		}
 	}
