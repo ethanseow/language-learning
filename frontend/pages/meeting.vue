@@ -33,9 +33,7 @@
 				</div>
 			</div>
 		</div>
-		<!--
 		<button class="p-4 bg-blue-600" @click="endMeeting">End Meeting</button>
-        -->
 		<div class="flex flex-col w-full">
 			<div class="grow bg-slate-500 h-[90%]">
 				<Message
@@ -67,6 +65,15 @@
 <script setup lang="ts">
 import { connect } from "socket.io-client";
 import { RTCMocker } from "~~/utils/RTCMocker";
+
+const hasEndedMeeting = ref(false);
+const setHasEndedMeeting = (v: boolean) => {
+	hasEndedMeeting.value = v;
+};
+
+const endMeeting = () => {
+	rtc.socket.emit(SocketEmits.TRIGGER_END_MEETING);
+};
 
 const message = ref("");
 const sendMessage = () => {
@@ -162,10 +169,27 @@ const initStreams = async () => {
 	};
 };
 
+const initExtraSocketHandlers = () => {
+	// this will only deal with ui and frontend stuff and should not touch the rtcmocker
+	rtc?.socket.on(SocketEmits.END_MEETING, () => {
+		setHasEndedMeeting(true);
+	});
+};
+
+/*
+    have end meeting be a bomb that is sent to both - aphelios bomb
+
+    a socket will trigger the bomb
+    the bomb will blow up affect both socket
+
+    need to finish the index.ts route for this
+*/
+
 onMounted(async () => {
 	initRTC();
 	initRTCHandlers();
 	initStreams();
+	initExtraSocketHandlers();
 });
 onBeforeRouteLeave(() => {
 	if (rtc) {
