@@ -137,14 +137,25 @@ const closeRoom = async (roomId: string) => {
 		.where("id")
 		.equals(roomId)
 		.return.all();
-	const entityIds = rooms.map((room) => {
+	const roomEntityIds = rooms.map((room) => {
 		return room.entityId;
 	});
-	if (entityIds.length == 0) {
+	if (roomEntityIds.length == 0) {
 		return null;
 	}
-	await roomRepository.remove(entityIds);
-	return entityIds;
+	const roomUserEntityIds = [];
+	await Promise.all(
+		rooms.map(async (room) => {
+			const roomUsers = await findUsersForRoom(room);
+			Object.keys(roomUsers).forEach((key) => {
+				const a = roomUsers[key].entityId;
+				roomUserEntityIds.push(a);
+			});
+		})
+	);
+	await roomUserRepository.remove(roomUserEntityIds);
+	await roomRepository.remove(roomEntityIds);
+	return roomEntityIds;
 };
 
 const clearAll = async () => {

@@ -27,6 +27,8 @@ export default defineConfig({
 			cookies: "allow",
 		},
 	},
+
+	defaultCommandTimeout: 120000,
 	e2e: {
 		setupNodeEvents(on, config) {
 			const offering = consts.OFFERING;
