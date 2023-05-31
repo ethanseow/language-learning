@@ -130,8 +130,8 @@ const initRTC = async () => {
 	//@ts-ignore
 	const userId: string = useAuth().user.value?.uid;
 	//@ts-ignore
-	const cookie = useCookie("authCookie")?.value;
-	console.log("initRTC - useCookie", cookie);
+	//const cookie = useCookie("authCookie")?.value;
+	//console.log("initRTC - useCookie", cookie);
 
 	rtc = new RTCMocker(offering, seeking, userId);
 
