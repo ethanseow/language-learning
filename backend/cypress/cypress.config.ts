@@ -4,6 +4,8 @@ import room from "@/redis/room";
 import pool from "@/redis/pool";
 import { RTCMocker } from "../test/RTCMocker";
 import consts from "./consts";
+import { POOL_COMMANDS_ENUM, ROOM_COMMANDS_ENUM as r } from "./consts";
+import { Room } from "@/redis/RoomSingleton";
 export default defineConfig({
 	env: {
 		apiKey: process.env.NUXT_PUBLIC_API_KEY,
@@ -29,22 +31,40 @@ export default defineConfig({
 		setupNodeEvents(on, config) {
 			const offering = consts.OFFERING;
 			const seeking = consts.SEEKING;
-			const userId1 = consts.USERID1;
+			const userId1 = consts.MOCKER_USERID1;
 			// usually you need to set this
 			const userCookie = "cookie1";
 			const mocker1 = new RTCMocker(offering, seeking, userId1);
-			on("task", {
+			const roomCommands = {
 				clearRoom() {
 					room.clearAll();
 					return null;
 				},
+
+				async findRoomForUser(userId: string) {
+					const r = await room.findRoomForUser(userId);
+					if (r == undefined) {
+						return null;
+					}
+					return r;
+				},
+				async findUsersForRoom(r: Room) {
+					const u = await room.findUsersForRoom(r);
+					return u;
+				},
+			};
+			const poolCommands = {
 				clearPool() {
 					pool.clearAll();
 					return null;
 				},
-				rtcConnect() {
-					mocker1.rtcConnect();
-					return null;
+				findUserInPool(userId: string) {
+					return pool.findUserInPool(userId);
+				},
+			};
+			const rtcMockerCommands = {
+				getMockerUserId() {
+					return mocker1.userId;
 				},
 				socketConnect() {
 					mocker1.socketConnect();
@@ -68,6 +88,15 @@ export default defineConfig({
 				getMockerMessages() {
 					return mocker1.messages;
 				},
+				rtcConnect() {
+					mocker1.rtcConnect();
+					return null;
+				},
+			};
+			on("task", {
+				...roomCommands,
+				...rtcMockerCommands,
+				...poolCommands,
 				log(message) {
 					console.log(message);
 					return null;

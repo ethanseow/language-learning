@@ -120,6 +120,10 @@ const leaveRoom = async (userId: string) => {
 		user.isActive = false;
 		await roomRepository.save(room);
 		await roomUserRepository.save(user);
+		if (room.numInRoom <= 0) {
+			await closeRoom(room.id);
+			return;
+		}
 	} else {
 		return null;
 	}
@@ -127,6 +131,7 @@ const leaveRoom = async (userId: string) => {
 
 const closeRoom = async (roomId: string) => {
 	const roomRepository = await RoomRepository.getInstance();
+	const roomUserRepository = await RoomUserRepository.getInstance();
 	const rooms = await roomRepository
 		.search()
 		.where("id")

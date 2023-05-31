@@ -129,6 +129,7 @@ const initRTC = async () => {
 	const seeking: string = route.query?.seeking?.toString();
 	//@ts-ignore
 	const userId: string = useAuth().user.value?.uid;
+	console.log("initRTC - my userId", userId);
 	//@ts-ignore
 	//const cookie = useCookie("authCookie")?.value;
 	//console.log("initRTC - useCookie", cookie);
