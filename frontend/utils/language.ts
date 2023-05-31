@@ -1,3 +1,4 @@
+
 export const getImageFromLang = (lang: string) => {
 	let fileName = "";
 	switch (lang) {

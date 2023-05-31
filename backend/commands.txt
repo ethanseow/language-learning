@@ -1,0 +1,7 @@
+cd backend && npm run dev
+cd frontend &&  npm run dev
+cd backend && npx cypress open --config-file ./cypress/cypress.config.ts 
+
+make sure redis is cleared when you first start the server
+
+create a new session and copy that session's id in the elemtn

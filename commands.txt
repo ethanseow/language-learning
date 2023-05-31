@@ -1,0 +1,5 @@
+npm run dev for backend/frontend
+npx cypress open -C ./cypress/cypress.config.ts for cypress testing
+
+http://localhost:3000/meeting?offering=lang2&seeking=lang1&userId=bobby
+http://localhost:3000/meeting?offering=lang1&seeking=lang2&userId=flay

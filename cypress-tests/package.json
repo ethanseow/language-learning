@@ -1,0 +1,25 @@
+{
+	"name": "cypress-tests",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@cypress/instrument-cra": "^1.4.0",
+		"@cypress/webpack-preprocessor": "^5.17.0",
+		"cypress": "^12.9.0",
+		"cypress-browser-permissions": "^1.1.0",
+		"typescript": "^5.0.3"
+	},
+	"dependencies": {
+		"axios": "^1.4.0",
+		"dotenv": "^16.0.3",
+		"firebase": "^9.20.0",
+		"redis": "^4.6.6",
+		"wrtc": "^0.4.7"
+	}
+}

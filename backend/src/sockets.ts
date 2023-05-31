@@ -5,18 +5,23 @@ export enum SocketEmits {
 	EMIT_CANDIDATE = "emitCandidate",
 	EMIT_OFFER = "emitOffer",
 	EMIT_ANSWER = "emitAnswer",
+	EMIT_DESC = "emitDescription",
 	PARTNER_DISCONNECTED = "partnerDisconnected",
 	GET_ALL_MESSAGES = "getAllMessages",
 	SEND_MESSAGE = "sendMessage",
+	SHARE_SCREEN = "shareScreen",
+	CREATED_ROOM = "createdRoom",
+	ASK_POLITENESS = "askPoliteness",
+	REJOIN_ROOM = "rejoinRoom",
 }
-
 export enum SocketNamespaces {
 	WEB_RTC = "/webRtc",
 	TEXT_CHAT = "/textChat",
 }
-
 export interface JoinRoomReq {
 	userId: string;
+	offering: string;
+	seeking: string;
 }
 
 export type Message = {
@@ -26,14 +31,22 @@ export type Message = {
 	data: string;
 };
 
-export interface JoinedRoomReq {
+export interface GetAllMessagesRes {
+	messsages: Message[];
+}
+
+export type JoinedRoomReq = {
 	roomId: string;
-	host: string;
-	guest: string;
-}
+	isPolite: boolean;
+};
 export interface PartnerJoinedReq {
-	partnerUserId: string;
+	isPolite: boolean;
 }
+
+export interface AskForPoliteness {
+	myPolite: boolean | null;
+}
+
 export interface CandidateFoundReq {
 	candidate: RTCIceCandidate;
 }
@@ -43,6 +56,10 @@ export interface SendOfferReq {
 
 export interface SendAnswerReq {
 	answer: RTCSessionDescriptionInit;
+}
+
+export interface SendDesc {
+	description: RTCSessionDescriptionInit;
 }
 
 export interface SocketUser {

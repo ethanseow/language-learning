@@ -1,0 +1,26 @@
+{
+  "name": "lang-learning",
+  "version": "1.0.0",
+  "description": "## A project that helps those who want to do mandarin/english language exchange",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "cypress": "^12.9.0",
+    "socket.io-client": "^4.6.1",
+    "typescript": "^5.0.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethanseow/language-learning.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ethanseow/language-learning/issues"
+  },
+  "homepage": "https://github.com/ethanseow/language-learning#readme",
+  "type": "module"
+}
