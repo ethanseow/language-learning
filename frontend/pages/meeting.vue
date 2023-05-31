@@ -39,19 +39,24 @@
 		<div class="flex flex-col w-full">
 			<div class="grow bg-slate-500 h-[90%]">
 				<Message
-					v-for="message in rtc.messages"
+					v-for="message in rtc?.messages?.value"
 					:message="message"
 				></Message>
 			</div>
 			<div class="h-max bg-green-600 w-full p-4">
 				<label for="message">Message: </label>
 				<input
+					id="message-input"
 					name="message"
 					type="text"
 					class="text-black"
 					v-model="message"
 				/>
-				<button class="ml-3 bg-blue-300 p-1" @click="sendMessage">
+				<button
+					id="message-submit"
+					class="ml-3 bg-blue-300 p-1"
+					@click="sendMessage"
+				>
 					Enter
 				</button>
 			</div>
@@ -120,9 +125,10 @@ const initRTC = async () => {
 	const route = useRoute();
 	const offering = route.query?.offering?.toString();
 	const seeking = route.query?.seeking?.toString();
+	const userId = useAuth().user.value?.uid;
 	//@ts-ignore
-	const userId = useAuth().user.value.uid;
-	const cookie = userId;
+	const cookie = useCookie("authCookie")?.value;
+	console.log("initRTC - useCookie", cookie);
 
 	//@ts-ignore
 	rtc = new RTCMocker(offering, seeking, userId, cookie);

@@ -1,4 +1,5 @@
 import { Socket, io } from "socket.io-client";
+import { Ref } from "vue";
 import { SocketEmits } from "@/constants/sockets";
 import {
 	type JoinRoomReq,
@@ -32,7 +33,7 @@ export class RTCMocker {
 	peerConnection: RTCPeerConnection;
 	//@ts-ignore
 	rtcMessageChannel: RTCDataChannel;
-	messages: Message[];
+	messages: Ref<Message[]>;
 	userId: string;
 	offering: string;
 	seeking: string;
@@ -50,7 +51,7 @@ export class RTCMocker {
 		this.userId = userId;
 		this.offering = offering;
 		this.seeking = seeking;
-		this.messages = [];
+		this.messages = ref([]);
 	}
 	setRTCConnectionState(state: string) {
 		this.RTCConnectionState = state;
@@ -69,17 +70,22 @@ export class RTCMocker {
 		if (this.rtcMessageChannel) {
 			this.rtcMessageChannel.send(message);
 		}
-		this.messages.push(msg);
+		this.messages.value = [...this.messages.value, msg];
 	}
 	rtcMessageChannelInit() {
 		console.log("rtcMessageChannel initialized - I am", this.userId);
 		if (this.rtcMessageChannel) {
+			console.log("rtcMessageChannel.onMessage frontend initialized");
 			this.rtcMessageChannel.onmessage = (e: MessageEvent) => {
+				console.log("rtcMessageChannel.onMessage frontend triggered");
 				console.log(
 					"rtcMessageChannel.onMessage - received message from",
 					e.origin
 				);
-				this.messages.push({ isMine: false, message: e.data });
+				this.messages.value = [
+					...this.messages.value,
+					{ isMine: false, message: e.data },
+				];
 			};
 		}
 	}
@@ -299,6 +305,6 @@ export class RTCMocker {
 				this.peerConnection.signalingState
 			);
 		}
-		this.messages = [];
+		this.messages.value = [];
 	}
 }
