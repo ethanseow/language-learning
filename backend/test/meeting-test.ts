@@ -9,8 +9,8 @@ const userId1 = "user1";
 const userId2 = "2user";
 const authCookie1 = "cookie1";
 const authCookie2 = "cookie2";
-const mocker1 = new RTCMocker(offering, seeking, userId1, authCookie1);
-const mocker2 = new RTCMocker(seeking, offering, userId2, authCookie2);
+const mocker1 = new RTCMocker(offering, seeking, userId1);
+const mocker2 = new RTCMocker(seeking, offering, userId2);
 let firstOne = true;
 const tests = {
 	0: "joins a filled pool, joins a room, RTCConnects, leaves, and rejoins",
@@ -22,13 +22,12 @@ const tests = {
 	6: "joins a room and messages",
 };
 const flags = {
-	"joins a filled pool, joins a room, RTCConnects, leaves, and rejoins":
-		false,
-	"joins a filled pool, joins a room, RTCConnects, and leaves": false,
-	"joins empty meeting room": false,
-	"adds to pool redis and finds compatible user": false,
-	"joins and matches with user": false,
-	"joins, matches into a room, and establishes RTC connection": false,
+	"joins a filled pool, joins a room, RTCConnects, leaves, and rejoins": true,
+	"joins a filled pool, joins a room, RTCConnects, and leaves": true,
+	"joins empty meeting room": true,
+	"adds to pool redis and finds compatible user": true,
+	"joins and matches with user": true,
+	"joins, matches into a room, and establishes RTC connection": true,
 	"joins a room and messages": true,
 };
 describe("RTC user", function () {

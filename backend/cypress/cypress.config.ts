@@ -32,12 +32,7 @@ export default defineConfig({
 			const userId1 = consts.USERID1;
 			// usually you need to set this
 			const userCookie = "cookie1";
-			const mocker1 = new RTCMocker(
-				offering,
-				seeking,
-				userId1,
-				userCookie
-			);
+			const mocker1 = new RTCMocker(offering, seeking, userId1);
 			on("task", {
 				clearRoom() {
 					room.clearAll();

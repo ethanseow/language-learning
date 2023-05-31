@@ -20,39 +20,37 @@ describe("User ", () => {
 		cy.setCookie("authCookie", userCookie);
 	});
 
-	false &&
-		it("goes to /meeting with correct offering/seeking", () => {
-			cy.visit(`${websiteBase}`);
-			cy.setCookie("authCookie", userCookie);
-			cy.visit(`${websiteBase}/dashboard`);
-			cy.get(sessionElementID).click();
-			cy.url().should("include", "/meeting");
-			cy.task("rtcConnect");
-			cy.task("socketConnect");
-			cy.task("waitForRoom");
-			cy.get("Finding Available Partners").should("not.exist");
-		});
-	false &&
-		it("joins a room, leaves, and rejoins", () => {
-			cy.visit(`${websiteBase}`);
-			cy.setCookie("authCookie", userCookie);
-			cy.visit(`${websiteBase}/dashboard`);
-			cy.get(sessionElementID).click();
-			cy.url().should("include", "/meeting");
+	it("goes to /meeting with correct offering/seeking", () => {
+		cy.visit(`${websiteBase}`);
+		cy.setCookie("authCookie", userCookie);
+		cy.visit(`${websiteBase}/dashboard`);
+		cy.get(sessionElementID).click();
+		cy.url().should("include", "/meeting");
+		cy.task("rtcConnect");
+		cy.task("socketConnect");
+		cy.task("waitForRoom");
+		cy.get("Finding Available Partners").should("not.exist");
+	});
+	it("joins a room, leaves, and rejoins", () => {
+		cy.visit(`${websiteBase}`);
+		cy.setCookie("authCookie", userCookie);
+		cy.visit(`${websiteBase}/dashboard`);
+		cy.get(sessionElementID).click();
+		cy.url().should("include", "/meeting");
 
-			cy.task("rtcConnect");
-			cy.task("socketConnect");
-			cy.task("waitForRoom");
+		cy.task("rtcConnect");
+		cy.task("socketConnect");
+		cy.task("waitForRoom");
 
-			cy.get("Finding Available Partners").should("not.exist");
+		cy.get("Finding Available Partners").should("not.exist");
 
-			cy.visit(`${websiteBase}`);
-			cy.visit(`${websiteBase}/dashboard`);
-			cy.get(sessionElementID).click();
-			cy.url().should("include", "/meeting");
-			cy.get("Finding Available Partners").should("not.exist");
-		});
-	it("joins a room, leaves, and rejoins", async () => {
+		cy.visit(`${websiteBase}`);
+		cy.visit(`${websiteBase}/dashboard`);
+		cy.get(sessionElementID).click();
+		cy.url().should("include", "/meeting");
+		cy.get("Finding Available Partners").should("not.exist");
+	});
+	it("joins a room and messages", async () => {
 		cy.visit(`${websiteBase}`);
 		cy.visit(`${websiteBase}/dashboard`);
 		cy.get(sessionElementID).click();

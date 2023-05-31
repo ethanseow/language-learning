@@ -123,15 +123,17 @@ const initRTCHandlers = async () => {
 
 const initRTC = async () => {
 	const route = useRoute();
-	const offering = route.query?.offering?.toString();
-	const seeking = route.query?.seeking?.toString();
-	const userId = useAuth().user.value?.uid;
+	//@ts-ignore
+	const offering: string = route.query?.offering?.toString();
+	//@ts-ignore
+	const seeking: string = route.query?.seeking?.toString();
+	//@ts-ignore
+	const userId: string = useAuth().user.value?.uid;
 	//@ts-ignore
 	const cookie = useCookie("authCookie")?.value;
 	console.log("initRTC - useCookie", cookie);
 
-	//@ts-ignore
-	rtc = new RTCMocker(offering, seeking, userId, cookie);
+	rtc = new RTCMocker(offering, seeking, userId);
 
 	rtc.rtcConnect();
 	rtc.socketConnect();
@@ -163,6 +165,11 @@ onMounted(async () => {
 	initRTC();
 	initRTCHandlers();
 	initStreams();
+});
+onBeforeRouteLeave(() => {
+	if (rtc) {
+		rtc.disconnect();
+	}
 });
 </script>
 

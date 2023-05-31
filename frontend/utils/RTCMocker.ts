@@ -40,14 +40,7 @@ export class RTCMocker {
 	partnerId: string | null | undefined;
 	RTCSignalingState: string | undefined;
 	RTCConnectionState: string | undefined;
-	cookie: string;
-	constructor(
-		offering: string,
-		seeking: string,
-		userId: string,
-		cookie: string
-	) {
-		this.cookie = cookie;
+	constructor(offering: string, seeking: string, userId: string) {
 		this.userId = userId;
 		this.offering = offering;
 		this.seeking = seeking;
@@ -176,7 +169,7 @@ export class RTCMocker {
 		this.socket = io(consts.SOCKET_URL, {
 			withCredentials: true,
 			auth: {
-				authCookie: this.cookie,
+				userId: this.userId,
 			},
 		});
 		this.socket.connect();

@@ -28,7 +28,7 @@ export default defineConfig({
 		setupNodeEvents(on, config) {
 			on("task", {
 				clearRoom() {
-					room.clearAll();
+					//room.clearAll();
 				},
 				/*
 				connectToPeer() {

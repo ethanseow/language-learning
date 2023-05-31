@@ -78,10 +78,10 @@ io.on("connection", (socket) => {
 	console.log("Socket has connected", socket.id);
 	const req = socket.request;
 	socket.use((__, next) => {
-		const authCookie = socket.handshake.auth.authCookie;
+		const userId = socket.handshake.auth.userId;
 		//console.log("in socket.use middleware - retrieved cookie", authCookie);
-		if (authCookie && !req.session.user) {
-			req.session.user = { userId: cookieLookup(authCookie) };
+		if (userId && !req.session.user) {
+			req.session.user = { userId };
 			req.session.save();
 			/*
 			console.log(
@@ -193,14 +193,14 @@ io.on("connection", (socket) => {
 
 	socket.on(SocketEmits.EMIT_DESC, async (data: SendDesc) => {
 		//@ts-ignore
-		const authCookie = socket.handshake.auth.authCookie;
+		const cookieUserId = socket.handshake.auth.userId;
 		const userId = req.session?.user?.userId;
 		if (!userId) {
 			console.log(
 				"SocketEmits.EMIT_DESC- no userId - session",
 				//req.session,
-				"authCookie"
-				//authCookie
+				"userId"
+				//auth
 			);
 		}
 		const $room = await rooms.findRoomForUser(userId);
@@ -208,14 +208,14 @@ io.on("connection", (socket) => {
 	});
 	socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 		//@ts-ignore
-		const authCookie = socket.handshake.auth.authCookie;
+		const auth = socket.handshake.auth;
 		const userId = req.session?.user?.userId;
 		if (!userId) {
 			console.log(
 				"SocketEmits.EMIT_ANSWER - no userId - session",
 				//req.session,
-				"authCookie"
-				//authCookie
+				"auth"
+				//auth
 			);
 		}
 		console.log("SocketEmits.EMIT_ANSWER - emitting answer", userId);
@@ -223,29 +223,29 @@ io.on("connection", (socket) => {
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_ANSWER, data);
 	});
 	socket.on(SocketEmits.EMIT_CANDIDATE, async (data: CandidateFoundReq) => {
-		const authCookie = socket.handshake.auth.authCookie;
+		const auth = socket.handshake.auth;
 		const userId = req.session?.user?.userId;
 		if (!userId) {
 			console.log(
 				"SocketEmits.EMIT_CANDIDATE- no userId - session",
 				//req.session,
-				"authCookie"
-				//authCookie
+				"auth"
+				//auth
 			);
 		}
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
 	});
 	socket.on(SocketEmits.EMIT_OFFER, async (data: SendOfferReq) => {
-		const authCookie = socket.handshake.auth.authCookie;
+		const auth = socket.handshake.auth;
 		//@ts-ignore
 		const userId = req.session?.user?.userId;
 		if (!userId) {
 			console.log(
 				"SocketEmits.EMIT_OFFER- no userId - session",
 				req.session,
-				"authCookie",
-				authCookie
+				"auth",
+				auth
 			);
 		}
 		const $room = await rooms.findRoomForUser(userId);
@@ -290,15 +290,15 @@ io.on("connection", (socket) => {
 	});
     */
 	socket.on("disconnecting", async () => {
-		const authCookie = socket.handshake.auth.authCookie;
+		const auth = socket.handshake.auth.auth;
 		console.log("Socket.disconnecting");
 		const userId = req.session?.user?.userId;
 		if (!userId) {
 			console.log(
 				"Socket.disconnecting - no userId - session",
 				req.session,
-				"authCookie",
-				authCookie
+				"auth",
+				auth
 			);
 			return;
 		}
