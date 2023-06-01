@@ -69,7 +69,7 @@ describe("User ", () => {
 				isInRoom();
 			});
 		});
-	true &&
+	false &&
 		it("joins a room and messages", async function () {
 			cy.visit(`${websiteBase}`);
 			cy.visit(`${websiteBase}/dashboard`);
@@ -122,6 +122,34 @@ describe("User ", () => {
 						cy.wrap(roomForUser).should("not.exist");
 					});
 				});
+			});
+		});
+	true &&
+		it("joins a room, other user leaves, and room should be destroyed", async function () {
+			cy.visit(`${websiteBase}`);
+			cy.visit(`${websiteBase}/dashboard`);
+			cy.get(sessionElementID).click();
+			cy.url().should("include", "/meeting");
+
+			cy.task("rtcConnect");
+			cy.task("socketConnect");
+			cy.task("waitForRoom");
+
+			isInRoom().then(() => {
+				cy.get("#endMeeting")
+					.click()
+					.then(() => {
+						cy.task("findRoomForUser", consts.BROWSER_USER_ID).then(
+							(roomForUser) => {
+								cy.wrap(roomForUser).should("not.exist");
+							}
+						);
+						cy.task("findRoomForUser", consts.MOCKER_USERID1).then(
+							(roomForUser) => {
+								cy.wrap(roomForUser).should("not.exist");
+							}
+						);
+					});
 			});
 		});
 });

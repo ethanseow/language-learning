@@ -200,6 +200,9 @@ export class RTCMocker {
 		this.socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 			this.acceptAnswer(data.answer);
 		});
+		this.socket.on(SocketEmits.END_MEETING, () => {
+			this.disconnect();
+		});
 	};
 
 	rejoinRoom = async (isPolite: boolean) => {

@@ -117,13 +117,14 @@ const leaveRoom = async (userId: string) => {
 			return null;
 		}
 		room.numInRoom -= 1;
+		console.log("leaveRoom - userId", userId, "numInRoom", room.numInRoom);
 		user.isActive = false;
-		await roomRepository.save(room);
-		await roomUserRepository.save(user);
 		if (room.numInRoom <= 0) {
 			await closeRoom(room.id);
 			return;
 		}
+		await roomRepository.save(room);
+		await roomUserRepository.save(user);
 	} else {
 		return null;
 	}
