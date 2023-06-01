@@ -202,6 +202,7 @@ io.on("connection", (socket) => {
 				"userId"
 				//auth
 			);
+			return;
 		}
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_DESC, data);
@@ -217,6 +218,7 @@ io.on("connection", (socket) => {
 				"auth"
 				//auth
 			);
+			return;
 		}
 		console.log("SocketEmits.EMIT_ANSWER - emitting answer", userId);
 		const $room = await rooms.findRoomForUser(userId);
@@ -232,6 +234,7 @@ io.on("connection", (socket) => {
 				"auth"
 				//auth
 			);
+			return;
 		}
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_CANDIDATE, data);
@@ -247,48 +250,25 @@ io.on("connection", (socket) => {
 				"auth",
 				auth
 			);
+			return;
 		}
 		const $room = await rooms.findRoomForUser(userId);
 		socket.broadcast.to($room.id).emit(SocketEmits.EMIT_OFFER, data);
 	});
-	/*
-	socket.on(SocketEmits.GET_ALL_MESSAGES, (emptyArg, callback) => {
-		const userId = req.session.userId;
-		if (!utils.userHasRoom(userId, reverseUserLookup)) {
+	socket.on(SocketEmits.TRIGGER_END_MEETING, () => {
+		const userId = req.session?.user?.userId;
+		if (!userId) {
 			console.log(
-				"Sending Message - user",
-				userId,
-				"does not have a room"
+				"SocketEmits.TRIGGER_END_MEETING - no userId - session",
+				req.session
 			);
 			return;
 		}
-		const room = utils.getRoomForUser(
-			userId,
-			reverseUserLookup,
-			establishedRooms
-		);
-		callback({ messages: room.messages });
+		rooms.findRoomForUser(userId).then(async ($room) => {
+			await rooms.closeRoom($room.id);
+			io.to($room.id).emit(SocketEmits.END_MEETING);
+		});
 	});
-	socket.on(SocketEmits.SEND_MESSAGE, (message: Message) => {
-		const userId = req.session.userId;
-		console.log(userId, "user id from session");
-		if (!utils.userHasRoom(userId, reverseUserLookup)) {
-			console.log(
-				"Sending Message - user",
-				userId,
-				"does not have a room"
-			);
-			return;
-		}
-		const room = utils.getRoomForUser(
-			userId,
-			reverseUserLookup,
-			establishedRooms
-		);
-		room.messages.push(message);
-		socket.broadcast.to(room.id).emit(SocketEmits.SEND_MESSAGE, message);
-	});
-    */
 	socket.on("disconnecting", async () => {
 		const auth = socket.handshake.auth.auth;
 		console.log("Socket.disconnecting");

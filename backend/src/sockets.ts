@@ -13,6 +13,8 @@ export enum SocketEmits {
 	CREATED_ROOM = "createdRoom",
 	ASK_POLITENESS = "askPoliteness",
 	REJOIN_ROOM = "rejoinRoom",
+	END_MEETING = "endMeeting",
+	TRIGGER_END_MEETING = "triggerEndMeeting",
 }
 export enum SocketNamespaces {
 	WEB_RTC = "/webRtc",

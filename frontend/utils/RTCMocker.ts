@@ -201,6 +201,9 @@ export class RTCMocker {
 		this.socket.on(SocketEmits.EMIT_ANSWER, async (data: SendAnswerReq) => {
 			this.acceptAnswer(data.answer);
 		});
+		this.socket.on(SocketEmits.END_MEETING, () => {
+			this.disconnect();
+		});
 	};
 
 	rejoinRoom = async (isPolite: boolean) => {
@@ -290,7 +293,9 @@ export class RTCMocker {
 			this.socket.disconnect();
 		}
 		if (this.peerConnection) {
-			this.rtcMessageChannel.close();
+			if (this.rtcMessageChannel) {
+				this.rtcMessageChannel.close();
+			}
 			this.peerConnection.close();
 			this.peerConnection.restartIce();
 			console.log(

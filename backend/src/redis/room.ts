@@ -117,7 +117,12 @@ const leaveRoom = async (userId: string) => {
 			return null;
 		}
 		room.numInRoom -= 1;
+		console.log("leaveRoom - userId", userId, "numInRoom", room.numInRoom);
 		user.isActive = false;
+		if (room.numInRoom <= 0) {
+			await closeRoom(room.id);
+			return;
+		}
 		await roomRepository.save(room);
 		await roomUserRepository.save(user);
 	} else {
@@ -127,19 +132,31 @@ const leaveRoom = async (userId: string) => {
 
 const closeRoom = async (roomId: string) => {
 	const roomRepository = await RoomRepository.getInstance();
+	const roomUserRepository = await RoomUserRepository.getInstance();
 	const rooms = await roomRepository
 		.search()
 		.where("id")
 		.equals(roomId)
 		.return.all();
-	const entityIds = rooms.map((room) => {
+	const roomEntityIds = rooms.map((room) => {
 		return room.entityId;
 	});
-	if (entityIds.length == 0) {
+	if (roomEntityIds.length == 0) {
 		return null;
 	}
-	await roomRepository.remove(entityIds);
-	return entityIds;
+	const roomUserEntityIds = [];
+	await Promise.all(
+		rooms.map(async (room) => {
+			const roomUsers = await findUsersForRoom(room);
+			Object.keys(roomUsers).forEach((key) => {
+				const a = roomUsers[key].entityId;
+				roomUserEntityIds.push(a);
+			});
+		})
+	);
+	await roomUserRepository.remove(roomUserEntityIds);
+	await roomRepository.remove(roomEntityIds);
+	return roomEntityIds;
 };
 
 const clearAll = async () => {

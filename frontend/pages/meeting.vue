@@ -7,6 +7,12 @@
 			<p class="text-xl">Finding Available Partners</p>
 			<LoadingSpinner />
 		</div>
+		<div
+			v-if="hasEndedMeeting"
+			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
+		>
+			<p class="text-xl">Meeting Has Ended</p>
+		</div>
 		<div class="text-white flex flex-col items-center">
 			<div>Meeting Room</div>
 			<div id="videos">
@@ -33,9 +39,9 @@
 				</div>
 			</div>
 		</div>
-		<!--
-		<button class="p-4 bg-blue-600" @click="endMeeting">End Meeting</button>
-        -->
+		<button id="endMeeting" class="p-4 bg-blue-600" @click="endMeeting">
+			End Meeting
+		</button>
 		<div class="flex flex-col w-full">
 			<div class="grow bg-slate-500 h-[90%]">
 				<Message
@@ -67,6 +73,15 @@
 <script setup lang="ts">
 import { connect } from "socket.io-client";
 import { RTCMocker } from "~~/utils/RTCMocker";
+
+const hasEndedMeeting = ref(false);
+const setHasEndedMeeting = (v: boolean) => {
+	hasEndedMeeting.value = v;
+};
+
+const endMeeting = () => {
+	rtc.socket.emit(SocketEmits.TRIGGER_END_MEETING);
+};
 
 const message = ref("");
 const sendMessage = () => {
@@ -129,6 +144,7 @@ const initRTC = async () => {
 	const seeking: string = route.query?.seeking?.toString();
 	//@ts-ignore
 	const userId: string = useAuth().user.value?.uid;
+	console.log("initRTC - my userId", userId);
 	//@ts-ignore
 	//const cookie = useCookie("authCookie")?.value;
 	//console.log("initRTC - useCookie", cookie);
@@ -161,10 +177,27 @@ const initStreams = async () => {
 	};
 };
 
+const initExtraSocketHandlers = () => {
+	// this will only deal with ui and frontend stuff and should not touch the rtcmocker
+	rtc?.socket.on(SocketEmits.END_MEETING, () => {
+		setHasEndedMeeting(true);
+	});
+};
+
+/*
+    have end meeting be a bomb that is sent to both - aphelios bomb
+
+    a socket will trigger the bomb
+    the bomb will blow up affect both socket
+
+    need to finish the index.ts route for this
+*/
+
 onMounted(async () => {
 	initRTC();
 	initRTCHandlers();
 	initStreams();
+	initExtraSocketHandlers();
 });
 onBeforeRouteLeave(() => {
 	if (rtc) {
