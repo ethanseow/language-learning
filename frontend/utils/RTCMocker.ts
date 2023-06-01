@@ -293,7 +293,9 @@ export class RTCMocker {
 			this.socket.disconnect();
 		}
 		if (this.peerConnection) {
-			this.rtcMessageChannel.close();
+			if (this.rtcMessageChannel) {
+				this.rtcMessageChannel.close();
+			}
 			this.peerConnection.close();
 			this.peerConnection.restartIce();
 			console.log(

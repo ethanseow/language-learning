@@ -7,6 +7,12 @@
 			<p class="text-xl">Finding Available Partners</p>
 			<LoadingSpinner />
 		</div>
+		<div
+			v-if="hasEndedMeeting"
+			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
+		>
+			<p class="text-xl">Meeting Has Ended</p>
+		</div>
 		<div class="text-white flex flex-col items-center">
 			<div>Meeting Room</div>
 			<div id="videos">
@@ -33,7 +39,9 @@
 				</div>
 			</div>
 		</div>
-		<button class="p-4 bg-blue-600" @click="endMeeting">End Meeting</button>
+		<button id="endMeeting" class="p-4 bg-blue-600" @click="endMeeting">
+			End Meeting
+		</button>
 		<div class="flex flex-col w-full">
 			<div class="grow bg-slate-500 h-[90%]">
 				<Message
