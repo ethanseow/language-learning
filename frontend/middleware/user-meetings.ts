@@ -28,8 +28,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 		seeking,
 		rightNow
 	);
+	//  uncomment to enable session time check
 	/*
-    uncomment to enable session time check
 	if (!session) {
 		return createError({
 			statusCode: 404,

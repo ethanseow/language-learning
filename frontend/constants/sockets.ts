@@ -14,6 +14,7 @@ export enum SocketEmits {
 	REJOIN_ROOM = "rejoinRoom",
 	END_MEETING = "endMeeting",
 	TRIGGER_END_MEETING = "triggerEndMeeting",
+	ALREADY_IN_ROOM = "alreadyInRoom",
 }
 export enum SocketNamespaces {
 	WEB_RTC = "/webRtc",

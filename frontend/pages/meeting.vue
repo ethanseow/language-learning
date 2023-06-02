@@ -13,6 +13,12 @@
 		>
 			<p class="text-xl">Meeting Has Ended</p>
 		</div>
+		<div
+			v-if="alreadyInRoom"
+			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
+		>
+			<p class="text-xl">Already in room</p>
+		</div>
 		<div class="text-white flex flex-col items-center">
 			<div>Meeting Room</div>
 			<div id="videos">
@@ -73,11 +79,13 @@
 <script setup lang="ts">
 import { connect } from "socket.io-client";
 import { RTCMocker } from "~~/utils/RTCMocker";
+import { type Ref } from "vue";
 
 const hasEndedMeeting = ref(false);
 const setHasEndedMeeting = (v: boolean) => {
 	hasEndedMeeting.value = v;
 };
+const alreadyInRoom = ref(false);
 
 const endMeeting = () => {
 	rtc.socket.emit(SocketEmits.TRIGGER_END_MEETING);
@@ -95,13 +103,14 @@ const sendMessage = () => {
 definePageMeta({
 	middleware: ["auth", "user-meetings"],
 });
-let localStream: MediaStream;
-let remoteStream: MediaStream;
-
 //@ts-ignore
-let localSourceHTML: HTMLMediaElement = ref();
+let localStream: Ref<MediaStream> = ref();
 //@ts-ignore
-let remoteSourceHTML: HTMLMediaElement = ref();
+let remoteStream: Ref<MediaStream> = ref();
+//@ts-ignore
+let localSourceHTML: Ref<HTMLMediaElement> = ref();
+//@ts-ignore
+let remoteSourceHTML: Ref<HTMLMediaElement> = ref();
 
 let rtc: RTCMocker;
 let constraints = {
@@ -157,30 +166,44 @@ const initRTC = async () => {
 };
 
 const initStreams = async () => {
-	remoteStream = new MediaStream();
-	remoteSourceHTML.srcObject = remoteStream;
-
-	if (!localStream) {
-		localStream = await navigator.mediaDevices.getUserMedia({
+	remoteStream.value = new MediaStream();
+	remoteSourceHTML.value.srcObject = remoteStream.value;
+	try {
+		localStream.value = await navigator.mediaDevices.getUserMedia({
 			...constraints,
 		});
-		localSourceHTML.srcObject = localStream;
+	} catch (error) {
+		console.log("initStreams getUserMedia");
 	}
-	localStream.getTracks().forEach((track) => {
-		rtc.peerConnection.addTrack(track, localStream);
+
+	console.log("initStreams", localStream.value);
+	localSourceHTML.value.srcObject = localStream.value;
+	localStream.value.getTracks().forEach((track) => {
+		rtc.peerConnection.addTrack(track, localStream.value);
 	});
 
-	rtc.peerConnection.ontrack = (event) => {
-		event.streams[0].getTracks().forEach((track) => {
-			remoteStream.addTrack(track);
-		});
-	};
+	try {
+		rtc.peerConnection.ontrack = (event) => {
+			try {
+				event.streams[0].getTracks().forEach((track) => {
+					remoteStream.value.addTrack(track);
+				});
+			} catch (error) {
+				console.log("ontrack", error);
+			}
+		};
+	} catch (error) {
+		console.log("outside ontrack", error);
+	}
 };
 
 const initExtraSocketHandlers = () => {
 	// this will only deal with ui and frontend stuff and should not touch the rtcmocker
 	rtc?.socket.on(SocketEmits.END_MEETING, () => {
 		setHasEndedMeeting(true);
+	});
+	rtc?.socket.on(SocketEmits.ALREADY_IN_ROOM, () => {
+		alreadyInRoom.value = true;
 	});
 };
 

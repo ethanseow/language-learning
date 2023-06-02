@@ -145,6 +145,8 @@ io.on("connection", (socket) => {
 						roomId: $room.id,
 						isPolite: true,
 					});
+				} else {
+					socket.emit(SocketEmits.ALREADY_IN_ROOM);
 				}
 			} else if (!$pool && !$room) {
 				const otherUser = await pool.getCompatibleUser(user);

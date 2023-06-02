@@ -108,7 +108,6 @@ export class RTCMocker {
 					break;
 			}
 		};
-		this.peerConnection.ontrack = (e) => {};
 		// not being called because we are not sending anything over?
 		this.peerConnection.onconnectionstatechange = (e) => {
 			switch (this.peerConnection.connectionState) {
@@ -247,10 +246,11 @@ export class RTCMocker {
 			this.rtcMessageChannel =
 				this.peerConnection.createDataChannel("messaging-channel");
 			this.rtcMessageChannelInit();
-			const offer = await this.peerConnection.createOffer({
-				offerToReceiveAudio: true,
-				offerToReceiveVideo: true,
-			});
+			const temp = {
+				//offerToReceiveAudio: true,
+				//offerToReceiveVideo: true,
+			};
+			const offer = await this.peerConnection.createOffer();
 			await this.peerConnection.setLocalDescription(offer);
 			const data: SendOfferReq = {
 				//@ts-ignore
