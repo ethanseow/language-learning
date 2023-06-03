@@ -8,7 +8,7 @@
 				<br />
 				language barriers.
 			</div>
-			<div class="mt-5 text-2xl font-semibold text-tertiary">
+			<div class="mt-5 text-2xl font-semibold text-tertiary md:hidden">
 				Lorem ipsum dolor sit amet.
 				<br />
 				Lorem ipsum dolor sit amet
@@ -28,7 +28,7 @@
 		<div class="border-b-white border-b-[0px] text-gray-400">
 			Lorem ipsum dolor sit amet consectetur
 		</div>
-		<h1 class="text-xl font-normal">
+		<h1 class="text-xl font-normal md:hidden">
 			Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam
 			temporibus vel officia quam velit saepe. Lorem ipsum dolor sit amet.
 		</h1>
@@ -54,65 +54,28 @@
 		How does it work?
 	</h1>
 	<div
-		class="flex flex-row gap-4 w-5/6 h-1/3 mx-auto mt-10 items-center mb-10 lg:flex-col"
+		class="justify-center grid grid-cols-3 grid-rows-[1fr_max-content] grid-flow-col gap-4 w-5/6 h-1/3 mx-auto mt-10 mb-10 md:grid-flow-row md:grid-cols-2 md:grid-rows-3"
 	>
-		<!--
-
-		<div class="how-to-xl text-center">
-			<div>
-				<img class="w-1/3" src="/img/stock/select-language.jpg" />
-			</div>
-			<div>
-				<h1 class="font-bold text-2xl mt-4">Select your langauges</h1>
-				<h2 class="font-medium">
-					Select what languages you are seeking and offering
-				</h2>
-			</div>
+		<img class="how-to-img" src="/img/stock/calendar.jpg" />
+		<div>
+			<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
+			<h2 class="font-medium">
+				Lorem ipsum dolor sit amet consectetur adipisicing elit.
+			</h2>
 		</div>
-		<div class="how-to-xl text-center">
-			<div>
-				<img class="w-1/3" src="/img/stock/started-voice-call.jpg" />
-			</div>
-			<div>
-				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
-				<h2 class="font-medium">
-					Lorem ipsum dolor sit amet consectetur adipisicing elit.
-				</h2>
-			</div>
+		<img class="how-to-img" src="/img/stock/select-language.jpg" />
+		<div>
+			<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
+			<h2 class="font-medium">
+				Lorem ipsum dolor sit amet consectetur adipisicing elit.
+			</h2>
 		</div>
-    -->
-		<div :class="`${css}`">
-			<div class="object-fill">
-				<img class="mx-auto" src="/img/stock/calendar.jpg" />
-			</div>
-			<div>
-				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
-				<h2 class="font-medium">
-					Lorem ipsum dolor sit amet consectetur adipisicing elit.
-				</h2>
-			</div>
-		</div>
-		<div :class="`${css}`">
-			<div class="object-fill">
-				<img class="mx-auto" src="/img/stock/select-language.jpg" />
-			</div>
-			<div>
-				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
-				<h2 class="font-medium">
-					Lorem ipsum dolor sit amet consectetur adipisicing elit.
-				</h2>
-			</div>
-		</div>
-		<div :class="`${css}`">
-			<div class="object-fill">
-				<img class="mx-auto" src="/img/stock/started-voice-call.jpg" />
-			</div>
-			<div>
-				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
-				<h2 class="font-medium">
-					Lorem ipsum dolor sit amet consectetur adipisicing elit.
-				</h2>
-			</div>
+		<img class="how-to-img" src="/img/stock/started-voice-call.jpg" />
+		<div>
+			<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
+			<h2 class="font-medium">
+				Lorem ipsum dolor sit amet consectetur adipisicing elit.
+			</h2>
 		</div>
 	</div>
 </template>
@@ -132,8 +95,8 @@ const css =
 	justify-content: center;
 	align-items: center;
 }
-.how-to-xl img {
-	height: 200px;
-	width: 300px;
+.how-to-img {
+	height: 100%;
+	width: 100%;
 }
 </style>
