@@ -1,9 +1,9 @@
 <template>
 	<div
-		class="flex flex-row w-full px-16 mx-auto mt-5 text-6xl items-center lg:flex-row md:flex-col-reverse"
+		class="flex flex-row w-full px-16 mt-5 text-6xl items-center md:flex-col-reverse"
 	>
 		<div>
-			<div class="text-6xl font-bold text-secondary lg-mt-0 md:mt-2">
+			<div class="text-6xl font-bold text-secondary md:mt-2">
 				Break down
 				<br />
 				language barriers.
@@ -18,7 +18,7 @@
 			</div>
 		</div>
 		<div class="grow"></div>
-		<div class="lg:w-1/3 md:w-2/3">
+		<div class="min-w-[300px] w-1/3 md:w-2/3">
 			<img src="/img/stock/voice-call.jpg" />
 		</div>
 	</div>
@@ -54,42 +54,85 @@
 		How does it work?
 	</h1>
 	<div
-		class="flex flex-row gap-4 w-5/6 h-1/3 mx-auto mt-10 items-center mb-10"
+		class="flex flex-row gap-4 w-5/6 h-1/3 mx-auto mt-10 items-center mb-10 lg:flex-col"
 	>
-		<div class="how-to text-center">
-			<img src="/img/stock/select-language.jpg" />
-			<h1 class="font-bold text-2xl mt-4">Select your langauges</h1>
-			<h2 class="font-medium">
-				Select what languages you are seeking and offering
-			</h2>
+		<!--
+
+		<div class="how-to-xl text-center">
+			<div>
+				<img class="w-1/3" src="/img/stock/select-language.jpg" />
+			</div>
+			<div>
+				<h1 class="font-bold text-2xl mt-4">Select your langauges</h1>
+				<h2 class="font-medium">
+					Select what languages you are seeking and offering
+				</h2>
+			</div>
 		</div>
-		<div class="how-to text-center">
-			<img src="/img/stock/started-voice-call.jpg" />
-			<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
-			<h2 class="font-medium">
-				Lorem ipsum dolor sit amet consectetur adipisicing elit.
-			</h2>
+		<div class="how-to-xl text-center">
+			<div>
+				<img class="w-1/3" src="/img/stock/started-voice-call.jpg" />
+			</div>
+			<div>
+				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
+				<h2 class="font-medium">
+					Lorem ipsum dolor sit amet consectetur adipisicing elit.
+				</h2>
+			</div>
 		</div>
-		<div class="how-to text-center">
-			<img src="/img/stock/calendar.jpg" />
-			<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
-			<h2 class="font-medium">
-				Lorem ipsum dolor sit amet consectetur adipisicing elit.
-			</h2>
+    -->
+		<div :class="`${css}`">
+			<div class="object-fill">
+				<img class="mx-auto" src="/img/stock/calendar.jpg" />
+			</div>
+			<div>
+				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
+				<h2 class="font-medium">
+					Lorem ipsum dolor sit amet consectetur adipisicing elit.
+				</h2>
+			</div>
+		</div>
+		<div :class="`${css}`">
+			<div class="object-fill">
+				<img class="mx-auto" src="/img/stock/select-language.jpg" />
+			</div>
+			<div>
+				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
+				<h2 class="font-medium">
+					Lorem ipsum dolor sit amet consectetur adipisicing elit.
+				</h2>
+			</div>
+		</div>
+		<div :class="`${css}`">
+			<div class="object-fill">
+				<img class="mx-auto" src="/img/stock/started-voice-call.jpg" />
+			</div>
+			<div>
+				<h1 class="font-bold text-2xl mt-4">Lorem ipsum dolor sit.</h1>
+				<h2 class="font-medium">
+					Lorem ipsum dolor sit amet consectetur adipisicing elit.
+				</h2>
+			</div>
 		</div>
 	</div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const css =
+	"grow justify-center items-center text-center flex flex-col gap-4 lg:flex-row lg:text-start";
+</script>
 <style scoped>
-.how-to {
-	width: 33%;
+.how-to-large {
+	display: flex;
+	flex-direction: row;
+}
+.how-to-xl {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 }
-.how-to img {
+.how-to-xl img {
 	height: 200px;
 	width: 300px;
 }

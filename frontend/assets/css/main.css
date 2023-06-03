@@ -8,8 +8,12 @@
 		@apply text-primary font-inter bg-background;
 	}
 	body {
+		max-width: 1300px;
 		margin-left: auto;
 		margin-right: auto;
+	}
+	.container {
+		@apply max-w-[1535px] xl:max-w-[1279px] lg:max-w-[1023px] md:max-w-[767px] sm:max-w-[639px];
 	}
 	.default-bg {
 		@apply bg-background;
