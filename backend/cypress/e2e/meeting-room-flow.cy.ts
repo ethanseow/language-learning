@@ -36,7 +36,7 @@ describe("User ", () => {
 		cy.setCookie("authCookie", userCookie);
 	});
 
-	false &&
+	true &&
 		it("goes to /meeting with correct offering/seeking", function () {
 			cy.visit(`${websiteBase}`);
 			cy.setCookie("authCookie", userCookie);
@@ -49,7 +49,7 @@ describe("User ", () => {
 
 			isInRoom();
 		});
-	false &&
+	true &&
 		it("joins a room, leaves, and rejoins", function () {
 			cy.visit(`${websiteBase}`);
 			cy.setCookie("authCookie", userCookie);
@@ -69,7 +69,7 @@ describe("User ", () => {
 				isInRoom();
 			});
 		});
-	false &&
+	true &&
 		it("joins a room and messages", async function () {
 			cy.visit(`${websiteBase}`);
 			cy.visit(`${websiteBase}/dashboard`);
@@ -101,7 +101,7 @@ describe("User ", () => {
 				});
 			});
 		});
-	false &&
+	true &&
 		it("joins a room, other user leaves, and room should be destroyed", async function () {
 			cy.visit(`${websiteBase}`);
 			cy.visit(`${websiteBase}/dashboard`);
