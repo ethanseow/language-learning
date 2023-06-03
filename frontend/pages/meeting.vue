@@ -146,6 +146,7 @@ const initRTCHandlers = async () => {
 };
 
 const initRTC = async () => {
+	localSourceHTML.value.srcObject = localStream.value;
 	const route = useRoute();
 	//@ts-ignore
 	const offering: string = route.query?.offering?.toString();
@@ -168,16 +169,7 @@ const initRTC = async () => {
 const initStreams = async () => {
 	remoteStream.value = new MediaStream();
 	remoteSourceHTML.value.srcObject = remoteStream.value;
-	try {
-		localStream.value = await navigator.mediaDevices.getUserMedia({
-			...constraints,
-		});
-	} catch (error) {
-		console.log("initStreams getUserMedia");
-	}
-
 	console.log("initStreams", localStream.value);
-	localSourceHTML.value.srcObject = localStream.value;
 	localStream.value.getTracks().forEach((track) => {
 		rtc.peerConnection.addTrack(track, localStream.value);
 	});
@@ -217,6 +209,9 @@ const initExtraSocketHandlers = () => {
 */
 
 onMounted(async () => {
+	localStream.value = await navigator.mediaDevices.getUserMedia({
+		...constraints,
+	});
 	initRTC();
 	initRTCHandlers();
 	initStreams();
