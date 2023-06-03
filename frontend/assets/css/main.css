@@ -7,6 +7,10 @@
 	html {
 		@apply text-primary font-inter bg-background;
 	}
+	body {
+		margin-left: auto;
+		margin-right: auto;
+	}
 	.default-bg {
 		@apply bg-background;
 	}

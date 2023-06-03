@@ -1,9 +1,9 @@
 <template>
-	<!--
-
-	<div class="flex flex-row w-full px-16 mt-5 text-6xl items-center">
+	<div
+		class="flex flex-row w-full px-16 mx-auto mt-5 text-6xl items-center lg:flex-row md:flex-col-reverse"
+	>
 		<div>
-			<div class="text-6xl font-bold text-secondary">
+			<div class="text-6xl font-bold text-secondary lg-mt-0 md:mt-2">
 				Break down
 				<br />
 				language barriers.
@@ -18,7 +18,7 @@
 			</div>
 		</div>
 		<div class="grow"></div>
-		<div class="w-1/3">
+		<div class="lg:w-1/3 md:w-2/3">
 			<img src="/img/stock/voice-call.jpg" />
 		</div>
 	</div>
@@ -78,7 +78,6 @@
 			</h2>
 		</div>
 	</div>
-    -->
 </template>
 
 <script setup lang="ts"></script>
