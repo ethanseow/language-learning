@@ -1,11 +1,15 @@
 <template>
 	<div class="w-full h-screen bg-background flex flex-col px-20">
 		<FindPracticePortion class="self-center" />
-		<Sessions
-			:use-past-session="false"
-			:sessions="sessions.upcomingSessions"
-		/>
-		<Sessions use-past-session :sessions="sessions.pastSessions" />
+		<div class="lg:overflow-scroll">
+			<div class="w-full lg:w-[1024px]">
+				<Sessions
+					:use-past-session="false"
+					:sessions="sessions.upcomingSessions"
+				/>
+				<Sessions use-past-session :sessions="sessions.pastSessions" />
+			</div>
+		</div>
 		<Calendar v-if="showCalendar" />
 	</div>
 </template>

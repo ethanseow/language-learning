@@ -1,15 +1,17 @@
 <template>
 	<div
-		class="bg-black m-auto h-3/4 w-2/3 justify-center p-8 flex flex-row items-center"
+		class="bg-gray-200 text-black m-auto h-[500px] w-[675px] justify-center p-8 flex flex-row items-center"
 	>
 		<div class="flex flex-col items-center p-2 grow shrink basis-0">
-			<div class="flex flex-row justify-evenly w-full item-center">
-				<div class="align-middle">
-					Time Zone
-					<span class="font-bold text-gray-300">EST</span>
+			<div class="text-center">
+				Time Zone
+				<div class="font-bold text-blue-700">
+					{{ Intl.DateTimeFormat().resolvedOptions().timeZone }}
 				</div>
+			</div>
+			<div class="flex flex-row justify-evenly w-full">
 				<div class="font-bold text-lg">{{ month }} {{ year }}</div>
-				<div class="flex flex-row gap-8">
+				<div class="flex flex-row gap-8 h-max my-auto">
 					<ArrowIcon @click="changeMonth(-1)" class="arrow" />
 					<ArrowIcon @click="changeMonth(1)" class="rotate arrow" />
 				</div>
@@ -62,10 +64,12 @@
 	padding: auto;
 }
 .available-day {
-	background-color: thistle;
 	text-align: center;
+	background-color: #bad3df;
+	color: #1d4ed8;
+	border-width: 2px;
 	border-radius: 100%;
-	line-height: 30px;
+	line-height: 27px;
 	height: 30px;
 	width: 30px;
 }

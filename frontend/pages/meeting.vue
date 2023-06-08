@@ -1,7 +1,7 @@
 <template>
 	<div class="flex flex-row justify-start p-2">
 		<div
-			v-if="!isFullyConnected"
+			v-if="false"
 			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
 		>
 			<p class="text-xl">Finding Available Partners</p>
@@ -19,9 +19,8 @@
 		>
 			<p class="text-xl">Already in room</p>
 		</div>
-		<div class="text-white flex flex-col items-center">
-			<div>Meeting Room</div>
-			<div id="videos">
+		<div class="text-white flex flex-col items-center justify-start gap-2">
+			<div id="videos" class="flex flex-col gap-2">
 				<video
 					class="video-player"
 					autoplay
@@ -44,11 +43,11 @@
 					></video>
 				</div>
 			</div>
+			<button id="endMeeting" class="p-4 bg-blue-600" @click="endMeeting">
+				End Meeting
+			</button>
 		</div>
-		<button id="endMeeting" class="p-4 bg-blue-600" @click="endMeeting">
-			End Meeting
-		</button>
-		<div class="flex flex-col w-full">
+		<div class="flex flex-col w-full ml-3">
 			<div class="grow bg-slate-500 h-[90%]">
 				<Message
 					v-for="message in rtc?.messages?.value"
@@ -227,7 +226,6 @@ onBeforeRouteLeave(() => {
 <style scoped>
 .video-player {
 	border: 1px black solid;
-	margin-top: 3rem;
 	width: 250px;
 	height: 200px;
 }

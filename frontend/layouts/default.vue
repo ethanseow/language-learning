@@ -3,6 +3,7 @@
 		<LoginModal :toggleModal="modal.closeModal" v-if="modal.showModal" />
 		<Header />
 		<slot></slot>
+		<Footer />
 	</div>
 </template>
 

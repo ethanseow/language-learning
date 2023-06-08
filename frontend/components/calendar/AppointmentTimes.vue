@@ -1,12 +1,12 @@
 <template>
 	<div
-		class="w-full flex flex-col justify-center items-center text-white h-full gap-5"
+		class="w-full flex flex-col justify-center items-center text-[#1D4ED8] h-full gap-5"
 	>
 		<div>{{ props.chosenDayString }}</div>
 		<div class="overflow-y-auto w-full flex flex-col items-center">
 			<div
 				v-for="(time, index) in times"
-				class="text-center border-backgroundSecondary border-2 mb-2 rounded-md w-1/2"
+				class="text-center border-backgroundSecondary border-2 mb-2 rounded-md w-full bg-[#b0c2f4]"
 			>
 				<div
 					v-if="buttonSelection != index"
