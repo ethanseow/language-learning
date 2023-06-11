@@ -10,7 +10,7 @@ import {
 	where,
 } from "firebase/firestore";
 import { Auth } from "firebase/auth";
-import { type User } from "~~/utils/firebase";
+import { Feedback, searchRating, type User } from "~~/utils/firebase";
 import { createSession } from "~~/utils/firebase";
 import _ from "lodash";
 export interface Session {
@@ -45,11 +45,21 @@ export const useSessionStore = defineStore("sessionStore", () => {
 		},
         */
 	]);
+	let feedback: Ref<(null | Feedback)[]> = ref([]);
 	const addUpcomingSessions = async (newSession: Session) => {
 		const doc = await createSession(newSession);
 		if (doc) {
 			setUpcomingSessions([...upcomingSessions.value, newSession]);
 		}
+	};
+	const retrieveAllFeedback = async (sessions: Session[]) => {
+		feedback.value = await Promise.all(
+			sessions.map(async (s) => {
+				console.log("retrieveAllFeedback - sessionId", s.id);
+				const a = await searchRating(s.id);
+				return a;
+			})
+		);
 	};
 	const setUpcomingSessions = (sessions: Session[]) => {
 		upcomingSessions.value = _.cloneDeep(sessions);
@@ -76,11 +86,13 @@ export const useSessionStore = defineStore("sessionStore", () => {
 
 	// need to think about this - cannot have it check every single time when user changes
 	return {
+		feedback,
 		pastSessions,
 		upcomingSessions,
 		addUpcomingSessions,
 		setUpcomingSessions,
 		setPastSessions,
 		retrieveAllSessions,
+		retrieveAllFeedback,
 	};
 });

@@ -1,7 +1,7 @@
 <template>
 	<div class="flex flex-row justify-start p-2">
 		<div
-			v-if="false"
+			v-if="isFullyConnected"
 			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
 		>
 			<p class="text-xl">Finding Available Partners</p>
@@ -77,6 +77,7 @@
 
 <script setup lang="ts">
 import { connect } from "socket.io-client";
+import { DocumentData, DocumentReference } from "firebase/firestore";
 import { RTCMocker } from "~~/utils/RTCMocker";
 import { type Ref } from "vue";
 
@@ -121,8 +122,29 @@ let constraints = {
 };
 
 const isFullyConnected = computed(() => {
-	return stableSignalingState.value && connectedConnectionState.value;
+	if (stableSignalingState.value && connectedConnectionState.value) {
+		if (!latch.value) {
+			latch.value = true;
+			const firstName = useAccountStore().account.firstName;
+			const userId = useAccountStore().account.userId;
+			const sessionId = useRatingStore().sessionId;
+			if (userId && sessionId) {
+				createRating(sessionId, "", firstName, userId).then(
+					(doc: DocumentReference<DocumentData> | null) => {
+						if (doc) {
+							useRatingStore().setDoc(doc);
+						}
+					}
+				);
+			}
+		}
+		return true;
+	} else {
+		return false;
+	}
 });
+
+const latch = ref(false);
 const stableSignalingState = ref(false);
 const connectedConnectionState = ref(false);
 

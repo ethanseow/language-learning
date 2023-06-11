@@ -1,6 +1,7 @@
 import { Session } from "~~/stores/sessions";
 import {
 	DocumentData,
+	DocumentReference,
 	Firestore,
 	QueryDocumentSnapshot,
 	SnapshotOptions,
@@ -14,6 +15,7 @@ import {
 	limit,
 	query,
 	setDoc,
+	updateDoc,
 	where,
 } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
@@ -28,8 +30,16 @@ export type User = {
 	username: string;
 };
 
+export type Feedback = {
+	sessionId: string;
+	feedback: string;
+	fromName: string;
+	fromUserId: string;
+};
+
 type SessionDocumentData = DocumentData & FirebaseSession;
 type UserDocumentData = DocumentData & User;
+type FeedbackDocumentData = DocumentData & Feedback;
 
 export const sessionConverter = {
 	toFirestore(session: Session): DocumentData {
@@ -85,6 +95,25 @@ export const userConverter = {
 			uid,
 			username,
 		};
+	},
+};
+
+export const feedbackConverter = {
+	toFirestore(f: Feedback): DocumentData {
+		return {
+			sessionId: f.sessionId,
+			f: f.feedback,
+			fromName: f.fromName,
+			fromUserId: f.fromUserId,
+		};
+	},
+	fromFirestore(
+		snapshot: QueryDocumentSnapshot,
+		options: SnapshotOptions
+	): Feedback {
+		//@ts-ignore
+		const data: FeedbackDocumentData = snapshot.data(options);
+		return data;
 	},
 };
 
@@ -211,5 +240,52 @@ export const createOrGetUser = async (user: FirebaseUser) => {
 	} catch (error) {
 		console.log(error);
 		return null;
+	}
+};
+
+export type FeedbackUser = {
+	userId: string;
+	name: string;
+};
+export const createRating = async (
+	sessionId: string,
+	feedback: string,
+	name: string,
+	userId: string
+) => {
+	const fs = useNuxtApp().$firestore;
+	try {
+		const docRef = await addDoc(collection(fs, firebaseConsts.feedback), {
+			sessionId,
+			feedback,
+			fromName: name,
+			fromUserId: userId,
+		});
+		return docRef;
+	} catch (error) {
+		console.log(error);
+		return null;
+	}
+};
+export const updateRating = async (
+	doc: DocumentReference<DocumentData>,
+	feedback: string
+) => {
+	await updateDoc(doc, {
+		feedback,
+	});
+};
+export const searchRating = async (sessionId: string) => {
+	const fs = useNuxtApp().$firestore;
+	const feedbackRef = collection(fs, firebaseConsts.feedback).withConverter(
+		feedbackConverter
+	);
+	const q = query(feedbackRef, where("sessionId", "==", sessionId));
+	const docs = await getDocs(q);
+	if (docs.empty) {
+		return null;
+	} else {
+		const user = docs.docs[0].data();
+		return user;
 	}
 };

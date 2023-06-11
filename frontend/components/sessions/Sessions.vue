@@ -1,4 +1,14 @@
 <template>
+	<ClickOutside v-if="canShowFeedbackModal" :id="ids.outsideFeedback">
+		<FeedbackModal
+			v-click-outside="{
+				id: ids.outsideFeedback,
+				func: (e) => closeFeedbackModal(),
+			}"
+			class="m-auto"
+			:sessionId="sessionId"
+		/>
+	</ClickOutside>
 	<div class="w-full">
 		<span class="font-semibold text-2xl">
 			{{ props.usePastSession ? "Past Sessions" : "Upcoming Sessions" }}
@@ -58,6 +68,7 @@
 				<td>
 					<button
 						v-if="props.usePastSession"
+						@click="openFeedbackModal(session.id)"
 						class="text-green-400 border-green-400 border-[2px] py-1 px-6 rounded-md"
 					>
 						View
@@ -71,6 +82,11 @@
 				>
 					<NuxtLink
 						v-if="true || allowMeetingRoom(session.appointmentDate)"
+						@click="
+							() => {
+								useRatingStore().setSessionId(session.id);
+							}
+						"
 						:to="`${urlConsts.MEETING}?offering=${session.languageOffering}&seeking=${session.languageSeeking}`"
 						class="bg-green-400 text-white border-white border-[2px] py-1 px-6 rounded-md font-bold"
 					>
@@ -110,10 +126,48 @@ import { type ComputedRef } from "vue";
 import { storeToRefs } from "pinia";
 import { Session } from "~~/stores/sessions";
 import { urlConsts } from "~~/constants/urlConsts";
+import { searchRating } from "~~/utils/firebase";
 const props = defineProps<{
 	usePastSession: boolean | null;
 	sessions: Session[];
 }>();
+const feedback = useSessionStore().feedback;
+
+onMounted(() => {
+	/*
+	if (props.usePastSession) {
+		console.log("onMounted - props.usePastSession");
+		searchRating("287Ec5voA7RdndUWNQTA").then((value) => {
+			console.log("searchRating", value);
+		});
+	}
+    */
+	if (props.usePastSession) {
+		useSessionStore()
+			.retrieveAllFeedback(props.sessions)
+			.then(() => {
+				console.log(
+					"feedback after on mounted",
+					useSessionStore().feedback
+				);
+			});
+	}
+});
+
+const canShowFeedbackModal = ref(false);
+const sessionId = ref("");
+
+const openFeedbackModal = (sid: string) => {
+	console.log("openFeedbackModal sid", sid);
+	canShowFeedbackModal.value = true;
+	sessionId.value = sid;
+};
+
+const closeFeedbackModal = () => {
+	canShowFeedbackModal.value = false;
+	sessionId.value = "";
+};
+
 const sortedSessions = computed(() => {
 	return props.sessions.slice().sort((a, b) => {
 		return b.appointmentDate.getTime() - a.appointmentDate.getTime();
