@@ -24,22 +24,22 @@
 
 <script setup lang="ts">
 import { searchRating } from "~~/utils/firebase";
+import { type Session } from "~~/stores/sessions";
+const props = defineProps<{ session: Session; close: Function }>();
 
-const props = defineProps({ sessionId: String, close: Function });
-
-const time = "February 9th at 1:00 PM";
-const name = "Bobby";
-const feedbackText = "This is some feedback";
+const time = formatDate(props.session.appointmentDate);
 const f = computed(() => {
 	return useSessionStore().feedback.find((f) => {
-		return f?.sessionId == props.sessionId;
+		return f?.sessionId == props.session.id;
 	});
 });
+const name = f.value?.fromName;
+const feedbackText = f.value?.feedback;
 onMounted(() => {
-	console.log("onMounted props.sessionId", props.sessionId);
+	console.log("onMounted props.sessionId", props.session.id);
 	const a = () => {
 		return useSessionStore().feedback.find((f) => {
-			return f?.sessionId == props.sessionId;
+			return f?.sessionId == props.session.id;
 		});
 	};
 	console.log("onMounted find feedback for session", a());

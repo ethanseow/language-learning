@@ -1,8 +1,9 @@
 import { DocumentData, DocumentReference } from "firebase/firestore";
 import { defineStore } from "pinia";
 import { Ref } from "vue";
+import { Session } from "./sessions";
 export const useRatingStore = defineStore("ratingStore", () => {
-	const sessionId = ref();
+	const session = ref();
 	const meetingId = ref();
 	const doc = ref();
 	const setMeetingId = (id: string) => {
@@ -11,16 +12,15 @@ export const useRatingStore = defineStore("ratingStore", () => {
 	const setDoc = (d: DocumentReference<DocumentData>) => {
 		doc.value = d;
 	};
-	const setSessionId = (sid: string) => {
-		sessionId.value = sid;
-		console.log("setSessionId", sessionId.value);
+	const setSession = (s: Session) => {
+		session.value = s;
 	};
 	return {
 		meetingId,
 		setMeetingId,
 		doc,
 		setDoc,
-		sessionId,
-		setSessionId,
+		session,
+		setSessionId: setSession,
 	};
 });

@@ -35,11 +35,16 @@ export type Feedback = {
 	feedback: string;
 	fromName: string;
 	fromUserId: string;
+	appointmentDate: Date;
+};
+
+type FirebaseFeedback = Omit<Feedback, "appointmentDate"> & {
+	appointmentDate: Timestamp;
 };
 
 type SessionDocumentData = DocumentData & FirebaseSession;
 type UserDocumentData = DocumentData & User;
-type FeedbackDocumentData = DocumentData & Feedback;
+type FeedbackDocumentData = DocumentData & FirebaseFeedback;
 
 export const sessionConverter = {
 	toFirestore(session: Session): DocumentData {
@@ -105,6 +110,7 @@ export const feedbackConverter = {
 			f: f.feedback,
 			fromName: f.fromName,
 			fromUserId: f.fromUserId,
+			appointmentDate: Timestamp.fromDate(f.appointmentDate),
 		};
 	},
 	fromFirestore(
@@ -113,7 +119,16 @@ export const feedbackConverter = {
 	): Feedback {
 		//@ts-ignore
 		const data: FeedbackDocumentData = snapshot.data(options);
-		return data;
+		const date = data.appointmentDate?.toDate();
+		const { appointmentDate, feedback, fromName, fromUserId, sessionId } =
+			data;
+		return {
+			appointmentDate: date,
+			feedback,
+			fromName,
+			fromUserId,
+			sessionId,
+		};
 	},
 };
 
@@ -249,18 +264,23 @@ export type FeedbackUser = {
 };
 
 export const createRating = async (
+	appointmentDate: Date,
 	sessionId: string,
 	feedback: string,
-	name: string,
-	userId: string
+	fromName: string,
+	fromUserId: string
 ) => {
 	const fs = useNuxtApp().$firestore;
 	try {
-		const docRef = await addDoc(collection(fs, firebaseConsts.feedback), {
+		const rating: Feedback = {
+			appointmentDate,
 			sessionId,
 			feedback,
-			fromName: name,
-			fromUserId: userId,
+			fromName,
+			fromUserId,
+		};
+		const docRef = await addDoc(collection(fs, firebaseConsts.feedback), {
+			...rating,
 		});
 		return docRef;
 	} catch (error) {

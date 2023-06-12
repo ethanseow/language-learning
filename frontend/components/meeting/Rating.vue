@@ -25,6 +25,9 @@ const props = defineProps({
 //@ts-ignore
 const d: DocumentReference<DocumentData> = props.doc;
 const submitFeedback = () => {
+	if (!d) {
+		return;
+	}
 	updateRating(d, feedback.value);
 };
 </script>

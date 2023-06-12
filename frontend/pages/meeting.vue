@@ -81,6 +81,7 @@ import { connect } from "socket.io-client";
 import { DocumentData, DocumentReference } from "firebase/firestore";
 import { RTCMocker } from "~~/utils/RTCMocker";
 import { type Ref } from "vue";
+import { Session } from "~~/stores/sessions";
 
 const rating = ref();
 const hasEndedMeeting = ref(false);
@@ -129,10 +130,11 @@ const isFullyConnected = computed(() => {
 		if (!latch.value) {
 			latch.value = true;
 			const user = useAuth().user;
-			const sessionId = useRatingStore().sessionId;
-			if (user.value && sessionId) {
+			const s: Session = useRatingStore().session;
+			if (user.value && s) {
 				createRating(
-					sessionId,
+					s.appointmentDate,
+					s.id,
 					"",
 					user.value?.username,
 					user.value?.uid

@@ -6,7 +6,7 @@
 				func: (e) => closeFeedbackModal(),
 			}"
 			class="m-auto"
-			:sessionId="sessionId"
+			:sessionId="sessionSelected"
 		/>
 	</ClickOutside>
 	<div class="w-full">
@@ -68,7 +68,7 @@
 				<td>
 					<button
 						v-if="props.usePastSession"
-						@click="openFeedbackModal(session.id)"
+						@click="openFeedbackModal(session)"
 						class="text-green-400 border-green-400 border-[2px] py-1 px-6 rounded-md"
 					>
 						View
@@ -134,7 +134,7 @@ const feedback = useSessionStore().feedback;
 // this may not run because it is inside of a vue-if handler - session is undefined on button render
 const joinMeetingHandler = (session: Session) => {
 	// set session id for /rating to know which rating to update
-	useRatingStore().setSessionId(session.id);
+	useRatingStore().setSessionId(session);
 };
 
 onMounted(() => {
@@ -159,17 +159,17 @@ onMounted(() => {
 });
 
 const canShowFeedbackModal = ref(false);
-const sessionId = ref("");
+const sessionSelected = ref();
 
-const openFeedbackModal = (sid: string) => {
-	console.log("openFeedbackModal sid", sid);
+const openFeedbackModal = (session: Session) => {
+	console.log("openFeedbackModal sid", session);
 	canShowFeedbackModal.value = true;
-	sessionId.value = sid;
+	sessionSelected.value = session;
 };
 
 const closeFeedbackModal = () => {
 	canShowFeedbackModal.value = false;
-	sessionId.value = "";
+	sessionSelected.value = null;
 };
 
 const sortedSessions = computed(() => {
