@@ -76,22 +76,21 @@
 					<div v-else class="text-black font-thin">N/A</div>
 				</td>
 				<td
-					:id="`${session.id}-join-meeting`"
 					v-if="!props.usePastSession"
 					class="flex flex-row justify-center"
 				>
-					<NuxtLink
+					<div
+						:id="`${session.id}-join-meeting`"
 						v-if="true || allowMeetingRoom(session.appointmentDate)"
-						@click="
-							() => {
-								useRatingStore().setSessionId(session.id);
-							}
-						"
-						:to="`${urlConsts.MEETING}?offering=${session.languageOffering}&seeking=${session.languageSeeking}`"
+						@click="joinMeetingHandler(session)"
 						class="bg-green-400 text-white border-white border-[2px] py-1 px-6 rounded-md font-bold"
 					>
-						Join Meeting!
-					</NuxtLink>
+						<NuxtLink
+							:to="`${urlConsts.MEETING}?offering=${session.languageOffering}&seeking=${session.languageSeeking}`"
+						>
+							Join Meeting!
+						</NuxtLink>
+					</div>
 
 					<div
 						v-else
@@ -132,6 +131,11 @@ const props = defineProps<{
 	sessions: Session[];
 }>();
 const feedback = useSessionStore().feedback;
+// this may not run because it is inside of a vue-if handler - session is undefined on button render
+const joinMeetingHandler = (session: Session) => {
+	// set session id for /rating to know which rating to update
+	useRatingStore().setSessionId(session.id);
+};
 
 onMounted(() => {
 	/*

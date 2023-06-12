@@ -247,6 +247,7 @@ export type FeedbackUser = {
 	userId: string;
 	name: string;
 };
+
 export const createRating = async (
 	sessionId: string,
 	feedback: string,

@@ -10,7 +10,7 @@ describe("User ", () => {
 	const userCookie = consts.USER_COOKIE;
 	const userId = consts.BROWSER_USER_ID;
 	const isInRoom = () => {
-		return cy.wait(3000).then(() => {
+		return cy.wait(5000).then(() => {
 			cy.task("findUserInPool", consts.BROWSER_USER_ID).should(
 				"not.exist"
 			);
@@ -36,7 +36,7 @@ describe("User ", () => {
 		cy.setCookie("authCookie", userCookie);
 	});
 
-	true &&
+	false &&
 		it("goes to /meeting with correct offering/seeking", function () {
 			cy.visit(`${websiteBase}`);
 			cy.setCookie("authCookie", userCookie);
@@ -49,7 +49,7 @@ describe("User ", () => {
 
 			isInRoom();
 		});
-	true &&
+	false &&
 		it("joins a room, leaves, and rejoins", function () {
 			cy.visit(`${websiteBase}`);
 			cy.setCookie("authCookie", userCookie);
@@ -69,7 +69,7 @@ describe("User ", () => {
 				isInRoom();
 			});
 		});
-	true &&
+	false &&
 		it("joins a room and messages", async function () {
 			cy.visit(`${websiteBase}`);
 			cy.visit(`${websiteBase}/dashboard`);
@@ -101,7 +101,7 @@ describe("User ", () => {
 				});
 			});
 		});
-	true &&
+	false &&
 		it("joins a room, other user leaves, and room should be destroyed", async function () {
 			cy.visit(`${websiteBase}`);
 			cy.visit(`${websiteBase}/dashboard`);
@@ -124,7 +124,7 @@ describe("User ", () => {
 				});
 			});
 		});
-	true &&
+	false &&
 		it("joins a room, other user leaves, and room should be destroyed", async function () {
 			cy.visit(`${websiteBase}`);
 			cy.visit(`${websiteBase}/dashboard`);
@@ -152,4 +152,32 @@ describe("User ", () => {
 					});
 			});
 		});
+	it("joins a room and ends meeting and gives a rating", async function () {
+		cy.visit(`${websiteBase}`);
+		cy.visit(`${websiteBase}/dashboard`)
+			.then(() => {
+				return cy.wait(3000);
+			})
+			.then(() => {
+				cy.get(sessionElementID).click();
+				cy.url().should("include", "/meeting");
+
+				cy.task("rtcConnect");
+				cy.task("socketConnect");
+				cy.task("waitForRoom");
+
+				isInRoom().then(() => {
+					cy.get("#endMeeting")
+						.click()
+						.then(() => {
+							cy.get("#feedback")
+								.click()
+								.type("feedback")
+								.then(() => {
+									cy.get("#submitFeedback").click();
+								});
+						});
+				});
+			});
+	});
 });

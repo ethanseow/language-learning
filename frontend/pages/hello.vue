@@ -13,19 +13,14 @@ onMounted(() => {
 	// it is not being set here
 	console.log(locale.value);
 });
+const a = ref();
 </script>
 
 <template>
-	<div>
-		<a
-			href="#"
-			v-for="locale in availableLocales"
-			:key="locale.code"
-			@click.prevent.stop="setLocale(locale.code)"
-			>{{ locale.name }}</a
-		>
-	</div>
-	<div>
-		{{ $t("welcome") }}
+	<div class="text-black">
+		<form>
+			<label>Type</label>
+			<input id="" v-model="a" />
+		</form>
 	</div>
 </template>

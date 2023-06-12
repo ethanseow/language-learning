@@ -1,20 +1,21 @@
 <template>
 	<div class="flex flex-row justify-start p-2">
 		<div
-			v-if="isFullyConnected"
+			v-if="!isFullyConnected"
 			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
 		>
 			<p class="text-xl">Finding Available Partners</p>
 			<LoadingSpinner />
 		</div>
+
 		<div
-			v-if="hasEndedMeeting"
+			v-else-if="hasEndedMeeting"
 			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
 		>
-			<p class="text-xl">Meeting Has Ended</p>
+			<Rating :doc="rating" />
 		</div>
 		<div
-			v-if="alreadyInRoom"
+			v-else-if="alreadyInRoom"
 			class="fixed flex flex-col justify-center items-center inset-0 w-screen h-screen bg-background"
 		>
 			<p class="text-xl">Already in room</p>
@@ -81,8 +82,9 @@ import { DocumentData, DocumentReference } from "firebase/firestore";
 import { RTCMocker } from "~~/utils/RTCMocker";
 import { type Ref } from "vue";
 
+const rating = ref();
 const hasEndedMeeting = ref(false);
-const setHasEndedMeeting = (v: boolean) => {
+const setHasEndedMeeting = async (v: boolean) => {
 	hasEndedMeeting.value = v;
 };
 const alreadyInRoom = ref(false);
@@ -100,6 +102,7 @@ const sendMessage = () => {
 	}
 	message.value = "";
 };
+
 definePageMeta({
 	middleware: ["auth", "user-meetings"],
 });
@@ -125,17 +128,19 @@ const isFullyConnected = computed(() => {
 	if (stableSignalingState.value && connectedConnectionState.value) {
 		if (!latch.value) {
 			latch.value = true;
-			const firstName = useAccountStore().account.firstName;
-			const userId = useAccountStore().account.userId;
+			const user = useAuth().user;
 			const sessionId = useRatingStore().sessionId;
-			if (userId && sessionId) {
-				createRating(sessionId, "", firstName, userId).then(
-					(doc: DocumentReference<DocumentData> | null) => {
-						if (doc) {
-							useRatingStore().setDoc(doc);
-						}
+			if (user.value && sessionId) {
+				createRating(
+					sessionId,
+					"",
+					user.value?.username,
+					user.value?.uid
+				).then((doc: DocumentReference<DocumentData> | null) => {
+					if (doc) {
+						rating.value = doc;
 					}
-				);
+				});
 			}
 		}
 		return true;

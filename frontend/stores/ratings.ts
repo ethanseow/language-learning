@@ -13,6 +13,7 @@ export const useRatingStore = defineStore("ratingStore", () => {
 	};
 	const setSessionId = (sid: string) => {
 		sessionId.value = sid;
+		console.log("setSessionId", sessionId.value);
 	};
 	return {
 		meetingId,
