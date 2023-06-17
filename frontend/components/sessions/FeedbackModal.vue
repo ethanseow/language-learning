@@ -11,40 +11,22 @@
 		<p>
 			Feedback from
 			<span class="text-purple-600">
-				{{ name }}
+				{{ props?.feedback?.fromName }}
 			</span>
 		</p>
 		<div
 			class="text-black bg-white p-10 h-[300px] w-[400px] overflow-y-auto"
 		>
-			{{ feedbackText }}
+			{{ props?.feedback?.feedback }}
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { searchRating } from "~~/utils/firebase";
+import { Feedback, searchRating } from "~~/utils/firebase";
 import { type Session } from "~~/stores/sessions";
-const props = defineProps<{ session: Session; close: Function }>();
-
-const time = formatDate(props.session.appointmentDate);
-const f = computed(() => {
-	return useSessionStore().feedback.find((f) => {
-		return f?.sessionId == props.session.id;
-	});
-});
-const name = f.value?.fromName;
-const feedbackText = f.value?.feedback;
-onMounted(() => {
-	console.log("onMounted props.sessionId", props.session.id);
-	const a = () => {
-		return useSessionStore().feedback.find((f) => {
-			return f?.sessionId == props.session.id;
-		});
-	};
-	console.log("onMounted find feedback for session", a());
-	console.log("onMounted", f.value);
-});
+const props = defineProps<{ feedback: Feedback; close: Function }>();
+const time = props.feedback && formatDate(props.feedback.appointmentDate);
 </script>
 
 <style scoped></style>

@@ -27,35 +27,7 @@ export default defineNuxtConfig({
 	modules: [
 		// ...
 		"@nuxtjs/tailwindcss",
-		[
-			"@nuxtjs/i18n",
-			{
-				//vueI18n: "./i18n.config.ts",
-
-				detectBrowserLanguage: {
-					useCookie: true,
-					cookieKey: "i18n_redirected",
-					//redirectOn: "root",
-					alwaysRedirect: true,
-				},
-				locales: [
-					{
-						code: "en",
-						name: "English",
-						// lazy loading order: `es.json` -> `es-AR.json`, and then merge 'es-AR.json' to 'es.json'
-						files: ["en.ts"],
-					},
-					{
-						code: "zh",
-						name: "Mandarin",
-						files: ["zh.ts"],
-					},
-				],
-				lazy: true,
-				langDir: "lang",
-				defaultLocale: "en",
-			},
-		],
+		["@nuxtjs/i18n"],
 		[
 			"@pinia/nuxt",
 			{
@@ -68,6 +40,39 @@ export default defineNuxtConfig({
 			},
 		],
 	],
+	i18n: {
+		detectBrowserLanguage: {
+			useCookie: true,
+			cookieKey: "i18n_redirected",
+			alwaysRedirect: true,
+		},
+
+		locales: [
+			{
+				code: "en-US",
+				name: "English",
+			},
+			{
+				code: "zh-CN",
+				name: "简体中文",
+			},
+			{
+				code: "es-ES",
+				name: "Español",
+			},
+			{
+				code: "fr-FR",
+				name: "Français",
+			},
+			{
+				code: "ja-JP",
+				name: "日本語",
+			},
+		],
+
+		defaultLocale: "en-US",
+		vueI18n: "./lang/i18n-config.ts", // if you are using custom path, default
+	},
 	components: [
 		{
 			path: "~/components/",

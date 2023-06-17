@@ -6,7 +6,7 @@
 				func: (e) => closeFeedbackModal(),
 			}"
 			class="m-auto"
-			:sessionId="sessionSelected"
+			:feedback="feedback"
 		/>
 	</ClickOutside>
 	<div class="w-full">
@@ -67,7 +67,7 @@
 				</td>
 				<td>
 					<button
-						v-if="props.usePastSession"
+						v-if="props.usePastSession && feedbacks[session.id]"
 						@click="openFeedbackModal(session)"
 						class="text-green-400 border-green-400 border-[2px] py-1 px-6 rounded-md"
 					>
@@ -121,7 +121,7 @@ tr:not(:first-child) td {
 </style>
 
 <script setup lang="ts">
-import { type ComputedRef } from "vue";
+import { type ComputedRef, type Ref } from "vue";
 import { storeToRefs } from "pinia";
 import { Session } from "~~/stores/sessions";
 import { urlConsts } from "~~/constants/urlConsts";
@@ -130,36 +130,28 @@ const props = defineProps<{
 	usePastSession: boolean | null;
 	sessions: Session[];
 }>();
-const feedback = useSessionStore().feedback;
 // this may not run because it is inside of a vue-if handler - session is undefined on button render
 const joinMeetingHandler = (session: Session) => {
 	// set session id for /rating to know which rating to update
 	useRatingStore().setSessionId(session);
 };
 
-onMounted(() => {
-	/*
-	if (props.usePastSession) {
-		console.log("onMounted - props.usePastSession");
-		searchRating("287Ec5voA7RdndUWNQTA").then((value) => {
-			console.log("searchRating", value);
-		});
+const feedbacks = computed(() => useSessionStore().feedback);
+const feedback = computed(() => {
+	if (sessionSelected.value == null) {
+		return null;
 	}
-    */
+	return feedbacks.value[sessionSelected.value.id];
+});
+
+onMounted(async () => {
 	if (props.usePastSession) {
-		useSessionStore()
-			.retrieveAllFeedback(props.sessions)
-			.then(() => {
-				console.log(
-					"feedback after on mounted",
-					useSessionStore().feedback
-				);
-			});
+		await useSessionStore().retrieveAllFeedback(props.sessions);
 	}
 });
 
 const canShowFeedbackModal = ref(false);
-const sessionSelected = ref();
+const sessionSelected: Ref<Session> = ref();
 
 const openFeedbackModal = (session: Session) => {
 	console.log("openFeedbackModal sid", session);

@@ -1,5 +1,5 @@
 <template>
-	<div class="relative" id="account-dropdown">
+	<div class="relative" v-click-outside-no-blur="closeDropdown">
 		<div class="flex gap-2 bg-secondary px-2 py-1" @click="toggleDropdown">
 			<h1 class="text-white">
 				{{ auth.user.value?.username }}
@@ -21,6 +21,9 @@
 const auth = useAuth();
 
 const canShowDropdown = ref(false);
+const closeDropdown = () => {
+	canShowDropdown.value = false;
+};
 const toggleDropdown = () => {
 	canShowDropdown.value = !canShowDropdown.value;
 };

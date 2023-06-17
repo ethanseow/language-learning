@@ -25,7 +25,6 @@
 </template>
 
 <script setup lang="ts">
-import { ids } from "@/utils/clickOutsideId";
 import { storeToRefs } from "pinia";
 const calendarUi = useCalenderUIStore();
 const calendarFlowUiStore = useCalendarUIFlowStore();

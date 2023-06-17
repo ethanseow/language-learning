@@ -45,7 +45,7 @@ export const useSessionStore = defineStore("sessionStore", () => {
 		},
         */
 	]);
-	let feedback: Ref<(null | Feedback)[]> = ref([]);
+	let feedback: Ref<Record<string, Feedback>> = ref({});
 	const addUpcomingSessions = async (newSession: Session) => {
 		const doc = await createSession(newSession);
 		if (doc) {
@@ -53,13 +53,21 @@ export const useSessionStore = defineStore("sessionStore", () => {
 		}
 	};
 	const retrieveAllFeedback = async (sessions: Session[]) => {
-		feedback.value = await Promise.all(
+		const a = await Promise.all(
 			sessions.map(async (s) => {
 				console.log("retrieveAllFeedback - sessionId", s.id);
 				const a = await searchRating(s.id);
 				return a;
 			})
 		);
+		const copy = { ...feedback.value };
+		a.forEach((s) => {
+			if (s?.sessionId) {
+				const sid = s.sessionId;
+				copy[sid] = s;
+			}
+		});
+		feedback.value = copy;
 	};
 	const setUpcomingSessions = (sessions: Session[]) => {
 		upcomingSessions.value = _.cloneDeep(sessions);

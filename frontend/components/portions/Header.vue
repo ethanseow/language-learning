@@ -4,7 +4,7 @@
 		<div
 			class="flex flex-row grow justify-between items-center font-semibold"
 		>
-			<NuxtLink :to="dashboard">Dashboard</NuxtLink>
+			<NuxtLink :to="dashboard">{{ $t("message.dashboard") }}</NuxtLink>
 			<NuxtLink :to="faq">FAQ</NuxtLink>
 			<AccountDropdown v-if="auth.isLoggedIn.value" />
 			<div v-else @click="modal.openModal">Login</div>
