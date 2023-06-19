@@ -11,22 +11,24 @@
 		<p>
 			Feedback from
 			<span class="text-purple-600">
-				{{ props?.feedback?.fromName }}
+				{{ props.feedbackOwner }}
 			</span>
 		</p>
 		<div
 			class="text-black bg-white p-10 h-[300px] w-[400px] overflow-y-auto"
 		>
-			{{ props?.feedback?.feedback }}
+			{{ props.feedbackText }}
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { Feedback, searchRating } from "~~/utils/firebase";
-import { type Session } from "~~/stores/sessions";
-const props = defineProps<{ feedback: Feedback; close: Function }>();
-const time = props.feedback && formatDate(props.feedback.appointmentDate);
+const props = defineProps<{
+	feedbackDate: Date;
+	feedbackText: string;
+	feedbackOwner: string;
+}>();
+const time = formatDate(props.feedbackDate);
 </script>
 
 <style scoped></style>
