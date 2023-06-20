@@ -62,10 +62,7 @@ const props = defineProps<{
 const modalRef = ref<HTMLElement | null>(null);
 
 const handleBackdropClick = (event: MouseEvent) => {
-	console.log("calling backdrop");
 	const modalElement = modalRef.value;
-	console.log(modalElement);
-	console.log(event.target);
 	if (modalElement && modalElement == event.target) {
 		props.closeModalFunc();
 	}
